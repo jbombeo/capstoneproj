@@ -2,7 +2,7 @@ import RegisteredUserController from '@/actions/App/Http/Controllers/Auth/Regist
 import { login } from '@/routes';
 import { Form, Head } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
-
+import { useForm } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ export default function Register() {
                 {({ processing, errors }) => (
                     <>
                         <div className="grid gap-6">
+                            {/* Name */}
                             <div className="grid gap-2">
                                 <Label htmlFor="name">Name</Label>
                                 <Input
@@ -38,6 +39,7 @@ export default function Register() {
                                 <InputError message={errors.name} className="mt-2" />
                             </div>
 
+                            {/* Email */}
                             <div className="grid gap-2">
                                 <Label htmlFor="email">Email address</Label>
                                 <Input
@@ -52,6 +54,27 @@ export default function Register() {
                                 <InputError message={errors.email} />
                             </div>
 
+                            {/* Role */}
+                            <div className="grid gap-2">
+                                <Label htmlFor="role">Role</Label>
+                                <select
+                                    id="role"
+                                    name="role"
+                                    required
+                                    className="border rounded p-2"
+                                    defaultValue=""
+                                >
+                                    <option value="" disabled>Select Role</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="secretary">Secretary</option>
+                                    <option value="sk">SK</option>
+                                    <option value="youth">Youth</option>
+                                    <option value="resident">Resident</option>
+                                </select>
+                                <InputError message={errors.role} />
+                            </div>
+
+                            {/* Password */}
                             <div className="grid gap-2">
                                 <Label htmlFor="password">Password</Label>
                                 <Input
@@ -66,6 +89,7 @@ export default function Register() {
                                 <InputError message={errors.password} />
                             </div>
 
+                            {/* Confirm Password */}
                             <div className="grid gap-2">
                                 <Label htmlFor="password_confirmation">Confirm password</Label>
                                 <Input
@@ -80,6 +104,7 @@ export default function Register() {
                                 <InputError message={errors.password_confirmation} />
                             </div>
 
+                            {/* Submit */}
                             <Button type="submit" className="mt-2 w-full" tabIndex={5}>
                                 {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
                                 Create account

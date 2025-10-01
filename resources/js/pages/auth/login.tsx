@@ -43,8 +43,8 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                             alt="Logo"
                             className="mx-auto h-30 w-30"
                         />
-                        <CardTitle className="text-l font-bold">Barangay Management System</CardTitle>
-                        <CardDescription className="text-xl">ADMIN</CardDescription>
+                        <CardTitle className="text-3xl font-bold">Barangay System Portal</CardTitle>
+                        <CardDescription className="text-l">Official Registration and Services Portal</CardDescription>
                     </CardHeader>
 
                     <CardContent>

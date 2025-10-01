@@ -1,0 +1,30 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Activity extends Model
+{
+    use HasFactory;
+
+    protected $table = 'activity';
+
+    protected $fillable = [
+        'dateofactivity',
+        'activity',
+        'description',
+        'users_id',
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'users_id');
+    }
+
+    public function activity_photos()
+    {
+        return $this->hasMany(ActivityPhoto::class, 'activity_id');
+    }
+}

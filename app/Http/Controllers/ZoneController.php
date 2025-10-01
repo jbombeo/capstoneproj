@@ -23,8 +23,7 @@ class ZoneController extends Controller
     {
         $validated = $request->validate([
             'zone' => 'required|string|max:15',
-            'username' => 'required|string|max:50',
-            'password' => 'required|string|max:255',
+
         ]);
 
         // Create new zone
@@ -44,8 +43,7 @@ class ZoneController extends Controller
     {
         $validated = $request->validate([
             'zone' => 'required|string|max:15',
-            'username' => 'required|string|max:50',
-            'password' => 'required|string|max:255',
+
         ]);
 
         $zone->update($validated);

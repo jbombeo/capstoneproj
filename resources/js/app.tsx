@@ -1,5 +1,7 @@
 import '../css/app.css';
 
+import { Ziggy } from './ziggy'; // we’ll fill this
+import { route as ziggyRoute } from 'ziggy-js';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
@@ -7,6 +9,10 @@ import { initializeTheme } from './hooks/use-appearance';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
+
+export function route(name: string, params?: any, absolute?: boolean) {
+  return ziggyRoute(name, params, absolute, Ziggy);
+}
 createInertiaApp({
     title: (title) => title ? `${title} - ${appName}` : appName,
     resolve: (name) => resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx')),
@@ -18,6 +24,8 @@ createInertiaApp({
     progress: {
         color: '#4B5563',
     },
+
+    
 });
 
 // This will set light / dark mode on load...

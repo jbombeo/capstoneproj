@@ -10,25 +10,34 @@ import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
 import {
-  BookOpen,
-  Folder,
-  LayoutGrid,
-  BookUser,
-  ShieldCheck,
+  Home,           // modern dashboard icon
+  Users,          // for officials and households
+  UserCheck,      // residents
+  MapPin,         // zone
+  FileCheck,      // barangay clearance
+  FileText,       // certificate of indigency
+  ClipboardList,  // blotter records
+  Folder,         // request document
+  Users2,         // household record alternative
+  CreditCard,     // barangay revenues
+  CalendarDays,   // activity/event
+  Activity        // log
 } from 'lucide-react';
-import AppLogo from './app-logo'; // ✅ custom logo
+import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
-  { title: 'Dashboard', href: dashboard(), icon: LayoutGrid },
-  { title: 'Barangay Official', href: '/officials', icon: BookUser },
-  { title: 'Residents Record', href: '/residents', icon: BookOpen },
-  { title: 'Zone', href: '/zones', icon: BookOpen },
-  { title: 'Barangay Certificates', href: '/brgycertificates', icon: ShieldCheck },
-  { title: 'Certificate of Indigency', href: '/certindigency', icon: BookUser },
-  { title: 'Blotter Records', href: '/blotters', icon: BookUser },
-  { title: 'Request Document', href: '/requestdoc', icon: Folder },
-  { title: 'Household Record', href: '/household', icon: BookUser },
-  { title: 'Barangay Revenues', href: '/brgyrevenue', icon: BookUser },
+  { title: 'Dashboard', href: dashboard(), icon: Home },
+  { title: 'Barangay Official', href: '/officials', icon: Users },
+  { title: 'Residents Record', href: '/residentregistereds', icon: UserCheck },
+  { title: 'Zone', href: '/zones', icon: MapPin },
+  { title: "Barangay Clearance", href: "/barangay-clearances", icon: FileCheck },
+  { title: "Certificate of Indigency", href: "/certificate-indigenous", icon: FileText },
+  { title: 'Blotter Records', href: '/blotters', icon: ClipboardList },
+  { title: 'Request Document', href: '/documentrequests', icon: Folder },
+  { title: 'Household Record', href: '/households', icon: Users2 },
+  { title: 'Barangay Revenues', href: '/brgyrevenue', icon: CreditCard },
+  { title: 'Activity/Event', href: '/activities', icon: CalendarDays },
+  { title: 'Log', href: '/brgyrevenue', icon: Activity },
 ];
 
 export function AppSidebar() {
@@ -36,21 +45,18 @@ export function AppSidebar() {
     <Sidebar
       collapsible="icon"
       variant="inset"
-      className="bg-green-600" // ✅ only background color changed
+      className="bg-green-600"
     >
-      {/* Full Logo Section */}
       <SidebarHeader className="bg-green-600 flex flex-col items-center py-6">
         <Link href={dashboard()} prefetch>
-          <AppLogo /> {/* full-sized logo */}
+          <AppLogo />
         </Link>
       </SidebarHeader>
 
-      {/* Main Navigation */}
       <SidebarContent>
         <NavMain items={mainNavItems} />
       </SidebarContent>
 
-      {/* User Section */}
       <SidebarFooter>
         <NavUser />
       </SidebarFooter>

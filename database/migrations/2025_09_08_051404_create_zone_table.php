@@ -12,8 +12,6 @@ return new class extends Migration
         Schema::create('zone', function (Blueprint $table) {
             $table->id();
             $table->string('zone', 15);
-            $table->string('username', 50);
-            $table->string('password', 255);
             $table->timestamps();
         });
     }

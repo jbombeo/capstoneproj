@@ -22,12 +22,29 @@ class Official extends Model
         'users_id',
     ];
 
-
     /**
      * Relationship: An official belongs to a user
      */
     public function user()
     {
         return $this->belongsTo(User::class, 'users_id');
+    }
+
+    /**
+     * Always apply position ordering globally
+     */
+    protected static function booted()
+    {
+        static::addGlobalScope('position_order', function ($query) {
+            $query->orderByRaw("
+                CASE
+                    WHEN position = 'Punong Barangay' THEN 1
+                    WHEN position = 'Barangay Kagawad' THEN 2
+                    WHEN position = 'SK Chairman' THEN 3
+                    WHEN position = 'Secretary' THEN 4
+                    ELSE 5
+                END
+            ");
+        });
     }
 }

@@ -20,8 +20,6 @@ import toast, { Toaster } from "react-hot-toast";
 interface Zone {
   id: number;
   zone: string;
-  username: string;
-  password: string;
   created_at: string;
   updated_at: string;
 }
@@ -40,8 +38,7 @@ export default function ZonePage() {
 
   const [formData, setFormData] = useState({
     zone: "",
-    username: "",
-    password: "",
+
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -49,7 +46,7 @@ export default function ZonePage() {
 
   // Reset form function
   const resetForm = () =>
-    setFormData({ zone: "", username: "", password: "" });
+    setFormData({ zone: ""});
 
   // Filtered search
   const filteredZones = zones.filter((z) =>
@@ -73,8 +70,7 @@ export default function ZonePage() {
     setEditingZone(zone);
     setFormData({
       zone: zone.zone,
-      username: zone.username,
-      password: zone.password,
+
     });
     setOpenEdit(true);
   };
@@ -158,25 +154,6 @@ export default function ZonePage() {
                     }
                   />
                 </div>
-                <div>
-                  <Label>USERNAME</Label>
-                  <Input
-                    value={formData.username}
-                    onChange={(e) =>
-                      setFormData({ ...formData, username: e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>PASSWORD</Label>
-                  <Input
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                  />
-                </div>
               </div>
               <DialogFooter className="mt-4">
                 <Button
@@ -198,8 +175,6 @@ export default function ZonePage() {
                 <tr>
                   <th className="px-4 py-2">ID</th>
                   <th className="px-4 py-2">Zone</th>
-                  <th className="px-4 py-2">Username</th>
-                  <th className="px-4 py-2">Password</th>
                   <th className="px-4 py-2">Action</th>
                 </tr>
               </thead>
@@ -212,8 +187,6 @@ export default function ZonePage() {
                     >
                       <td className="px-4 py-2">{zone.id}</td>
                       <td className="px-4 py-2">{zone.zone}</td>
-                      <td className="px-4 py-2">{zone.username}</td>
-                      <td className="px-4 py-2">{zone.password}</td>
                       <td className="px-4 py-2 space-x-2">
                         <Button
                           size="sm"
@@ -270,25 +243,6 @@ export default function ZonePage() {
                 value={formData.zone}
                 onChange={(e) =>
                   setFormData({ ...formData, zone: e.target.value })
-                }
-              />
-            </div>
-            <div>
-              <Label>USERNAME</Label>
-              <Input
-                value={formData.username}
-                onChange={(e) =>
-                  setFormData({ ...formData, username: e.target.value })
-                }
-              />
-            </div>
-            <div>
-              <Label>PASSWORD</Label>
-              <Input
-                type="password"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
                 }
               />
             </div>

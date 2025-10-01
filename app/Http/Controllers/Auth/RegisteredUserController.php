@@ -25,27 +25,34 @@ class RegisteredUserController extends Controller
 
     /**
      * Handle an incoming registration request.
-     *
-     * @throws \Illuminate\Validation\ValidationException
      */
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|string|lowercase|email|max:255|unique:'.User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'role'     => 'required|in:admin,secretary,sk,youth,resident', // ✅ validate role
         ]);
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
+            'name'     => $request->name,
+            'email'    => $request->email,
             'password' => Hash::make($request->password),
+            'role'     => $request->role, // ✅ store role
         ]);
 
         event(new Registered($user));
 
         Auth::login($user);
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        // ✅ Optional: redirect based on role
+        return match ($user->role) {
+            'resident'     => redirect()->route('resident.dashboard'),
+            'sk'     => redirect()->route('sk.dashboard'),
+            'youth'  => redirect()->route('youth.dashboard'),
+            'admin'  => redirect()->route('dashboard'), // or an admin dashboard
+            default  => redirect()->intended(route('dashboard')),
+        };
     }
 }
