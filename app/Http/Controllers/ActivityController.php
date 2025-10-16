@@ -5,108 +5,117 @@ namespace App\Http\Controllers;
 use App\Models\Activity;
 use App\Models\ActivityPhoto;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class ActivityController extends Controller
 {
-    /**
-     * Display all activities
-     */
+    // --- Display all activities ---
     public function index()
     {
-        $activities = Activity::with('activity_photos')->latest()->get();
+        // Each photo now automatically includes its "url" attribute from the model
+        $activities = Activity::with('activity_photos')->get();
 
-        return Inertia::render('Activity', [
-            'activities' => $activities,
-        ]);
+        return inertia('Activity', compact('activities'));
     }
 
-    /**
-     * Store a new activity
-     */
+    // --- Store new activity ---
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $request->validate([
             'dateofactivity' => 'required|date',
             'activity' => 'required|string|max:255',
-            'description' => 'required|string',
-            'photos.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048', // 2MB
-        ], [
-            'photos.*.max' => 'Each photo must not exceed 2MB.',
-            'photos.*.image' => 'Each file must be a valid image.',
-            'photos.*.mimes' => 'Only jpeg, png, jpg, gif, and webp are allowed.',
+            'description' => 'nullable|string',
+            'photos.*' => 'nullable|image|max:2048',
         ]);
 
+        // Create new activity record
         $activity = Activity::create([
-            'dateofactivity' => $validated['dateofactivity'],
-            'activity' => $validated['activity'],
-            'description' => $validated['description'],
-            'users_id' => auth()->id(),
+            'dateofactivity' => $request->dateofactivity,
+            'activity' => $request->activity,
+            'description' => $request->description,
         ]);
 
+        // Store uploaded photos
         if ($request->hasFile('photos')) {
-            foreach ($request->file('photos') as $file) {
-                $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-                $file->storeAs('public/activity_photos', $filename);
+            foreach ($request->file('photos') as $photo) {
+                $filename = Str::uuid() . '.' . $photo->getClientOriginalExtension();
+                $photo->storeAs('public/activity_photos', $filename);
 
                 ActivityPhoto::create([
                     'activity_id' => $activity->id,
-                    'filename' => $filename,
+                    'filename' => 'activity_photos/' . $filename,
                 ]);
             }
         }
 
-        return redirect()->back()->with('success', 'Activity created successfully!');
+        return redirect()->back()->with('success', 'Activity added successfully!');
     }
 
+    // --- Show single activity (optional) ---
+    public function show(Activity $activity)
+    {
+        $activity->load('activity_photos');
+
+        return Inertia::render('ActivityShow', [
+            'activity' => $activity,
+        ]);
+    }
+
+    // --- Edit form (optional if using modal edit in React) ---
+    public function edit(Activity $activity)
+    {
+        $activity->load('activity_photos');
+        return Inertia::render('ActivityEdit', compact('activity'));
+    }
+
+    // --- Update existing activity ---
     public function update(Request $request, Activity $activity)
     {
-        $validated = $request->validate([
+        $request->validate([
             'dateofactivity' => 'required|date',
             'activity' => 'required|string|max:255',
-            'description' => 'required|string',
-            'photos.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-        ], [
-            'photos.*.max' => 'Each photo must not exceed 2MB.',
-            'photos.*.image' => 'Each file must be a valid image.',
-            'photos.*.mimes' => 'Only jpeg, png, jpg, gif, and webp are allowed.',
+            'description' => 'nullable|string',
+            'photos.*' => 'nullable|image|max:2048',
         ]);
 
         $activity->update([
-            'dateofactivity' => $validated['dateofactivity'],
-            'activity' => $validated['activity'],
-            'description' => $validated['description'],
+            'dateofactivity' => $request->dateofactivity,
+            'activity' => $request->activity,
+            'description' => $request->description,
         ]);
 
+        // Handle new photos if uploaded
         if ($request->hasFile('photos')) {
-            foreach ($request->file('photos') as $file) {
-                $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-                $file->storeAs('public/activity_photos', $filename);
+            foreach ($request->file('photos') as $photo) {
+                $filename = Str::uuid() . '.' . $photo->getClientOriginalExtension();
+                $photo->storeAs('public/activity_photos', $filename);
 
                 ActivityPhoto::create([
                     'activity_id' => $activity->id,
-                    'filename' => $filename,
+                    'filename' => 'activity_photos/' . $filename,
                 ]);
             }
         }
 
-        return redirect()->back()->with('success', 'Activity updated successfully!');
+        return redirect()->route('activities.index')->with('success', 'Activity updated successfully!');
     }
 
-    /**
-     * Delete an activity
-     */
+    // --- Delete an activity and its photos ---
     public function destroy(Activity $activity)
     {
-        // Delete photos from storage
         foreach ($activity->activity_photos as $photo) {
-            Storage::disk('public')->delete('activity_photos/' . $photo->filename);
+            // Delete physical file if it exists
+            if (Storage::exists('public/' . $photo->filename)) {
+                Storage::delete('public/' . $photo->filename);
+            }
+
+            $photo->delete();
         }
 
         $activity->delete();
 
-        return redirect()->route('activities.index')
-            ->with('success', 'Activity deleted successfully.');
+        return redirect()->route('activities.index')->with('success', 'Activity deleted successfully!');
     }
 }

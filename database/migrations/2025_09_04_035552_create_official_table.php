@@ -19,7 +19,10 @@ return new class extends Migration
             $table->date('term_end');
             $table->string('status', 20)->default('active');
             
-            // Foreign key to tbluser
+            // Image column (optional)
+            $table->string('image')->nullable();
+
+            // Foreign key to users
             $table->unsignedBigInteger('users_id');
             $table->foreign('users_id')
                   ->references('id')

@@ -106,40 +106,40 @@ public function index()
     /**
      * Admin: Approve resident registration.
      */
-    public function approve(Resident $resident)
-    {
-        if ($resident->status !== 'pending') {
-            return back()->with('error', 'Resident already approved.');
-        }
+    // public function approve(Resident $resident)
+    // {
+    //     if ($resident->status !== 'pending') {
+    //         return back()->with('error', 'Resident already approved.');
+    //     }
 
-        // Check if email already exists in users table
-        if (User::where('email', $resident->email)->exists()) {
-            return back()->with('error', 'Email already exists in the system.');
-        }
+    //     // Check if email already exists in users table
+    //     if (User::where('email', $resident->email)->exists()) {
+    //         return back()->with('error', 'Email already exists in the system.');
+    //     }
 
-        // Generate a random password
-        $password = Str::random(10);
+    //     // Generate a random password
+    //     $password = Str::random(10);
 
-        // Create user account
-        $user = User::create([
-            'name' => $resident->first_name . ' ' . $resident->last_name,
-            'email' => $resident->email,
-            'password' => Hash::make($password),
-            'role' => 'resident',
-        ]);
+    //     // Create user account
+    //     $user = User::create([
+    //         'name' => $resident->first_name . ' ' . $resident->last_name,
+    //         'email' => $resident->email,
+    //         'password' => Hash::make($password),
+    //         'role' => 'resident',
+    //     ]);
 
-        // Link resident to user and update status
-        $resident->update([
-            'user_id' => $user->id,
-            'status' => 'approved',
-        ]);
+    //     // Link resident to user and update status
+    //     $resident->update([
+    //         'user_id' => $user->id,
+    //         'status' => 'approved',
+    //     ]);
 
-        // Send credentials via email
-        // Mail::to($user->email)->send(new ResidentApprovedMail($user, $password));
-    Log::info("Generated password for {$resident->email}: {$password}");
+    //     // Send credentials via email
+    //     // Mail::to($user->email)->send(new ResidentApprovedMail($user, $password));
+    // Log::info("Generated password for {$resident->email}: {$password}");
 
-        return back()->with('success', 'Resident approved and credentials sent.');
-    }
+    //     return back()->with('success', 'Resident approved and credentials sent.');
+    // }
 
     /**
      * Optional: Show a resident's details (admin or user view)
@@ -162,4 +162,46 @@ public function index()
 
         return back()->with('success', 'Resident registration rejected.');
     }
+
+
+
+public function approve($id)
+{
+    // Find the resident
+    $resident = Resident::findOrFail($id);
+
+    // Update resident status to approved
+    $resident->status = 'approved';
+    $resident->save();
+
+    // If resident doesn't have a user, create one
+    if (!$resident->user_id) {
+        $password = Str::random(8); // Generate random password
+        $user = User::create([
+            'name' => $resident->first_name . ' ' . $resident->last_name,
+            'email' => $resident->email,
+            'password' => bcrypt($password),
+            'role' => 'resident',
+            'is_approved' => true, // Mark as approved
+        ]);
+
+        $resident->user_id = $user->id;
+        $resident->save();
+
+        // Optionally send email with credentials
+
+        return response()->json([
+            'message' => 'Resident approved and user created',
+            'generatedPassword' => $password,
+        ]);
+    } else {
+        // Resident already has a user: just mark is_approved true
+        $resident->user->is_approved = true;
+        $resident->user->save();
+
+        return response()->json([
+            'message' => 'Resident approved',
+        ]);
+    }
+}
 }

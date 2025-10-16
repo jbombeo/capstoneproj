@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
+use Illuminate\Support\Str;
 
 class RegisterResidentController extends Controller
 {
@@ -64,16 +65,46 @@ class RegisterResidentController extends Controller
             ->with('success','Registration submitted. Wait for admin approval.');
     }
 
-    public function approve(User $user)
-    {
-        $user->is_approved = true;
-        $user->save();
-        return back()->with('success','User approved.');
-    }
+    // public function approve(User $user)
+    // {
+    //     $user->is_approved = true;
+    //     $user->save();
+    //     return back()->with('success','User approved.');
+    // }
 
-    public function reject(User $user)
-    {
-        $user->delete();
-        return back()->with('success','User rejected.');
-    }
+    // public function reject(User $user)
+    // {
+    //     $user->delete();
+    //     return back()->with('success','User rejected.');
+    // }
+
+public function approve(User $user)
+{
+    // Generate a random password
+    $plainPassword = Str::random(10);
+
+    // Update user
+    $user->password = Hash::make($plainPassword);
+    $user->is_approved = true;
+    $user->save();
+
+    // Optional: send email to resident
+    Mail::raw(
+        "Your account has been approved.\n\nEmail: {$user->email}\nPassword: {$plainPassword}\nPlease change after first login.",
+        function ($message) use ($user) {
+            $message->to($user->email)
+                    ->subject("Resident Account Approved");
+        }
+    );
+
+    // ✅ Return JSON instead of redirect
+    return response()->json([
+        'generatedPassword' => $plainPassword
+    ]);
+}
+
+
+
+
+
 }

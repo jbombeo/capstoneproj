@@ -1,62 +1,130 @@
-import { NavMain } from '@/components/nav-main';
-import { NavUser } from '@/components/nav-user';
+import { NavMain } from "@/components/nav-main";
+import { NavUser } from "@/components/nav-user";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-} from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
-import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/react';
+} from "@/components/ui/sidebar";
+import { dashboard } from "@/routes";
+import { type NavItem } from "@/types";
+import { Link } from "@inertiajs/react";
 import {
-  Home,           // modern dashboard icon
-  Users,          // for officials and households
-  UserCheck,      // residents
-  MapPin,         // zone
-  FileCheck,      // barangay clearance
-  FileText,       // certificate of indigency
-  ClipboardList,  // blotter records
-  Folder,         // request document
-  Users2,         // household record alternative
-  CreditCard,     // barangay revenues
-  CalendarDays,   // activity/event
-  Activity        // log
-} from 'lucide-react';
-import AppLogo from './app-logo';
+  Home,
+  Users,
+  UserCheck,
+  MapPin,
+  FileCheck,
+  FileText,
+  ClipboardList,
+  Folder,
+  Users2,
+  CreditCard,
+  CalendarDays,
+  Activity,
+  Settings,
+  ChevronRight,
+} from "lucide-react";
+import AppLogo from "./app-logo";
 
-const mainNavItems: NavItem[] = [
-  { title: 'Dashboard', href: dashboard(), icon: Home },
-  { title: 'Barangay Official', href: '/officials', icon: Users },
-  { title: 'Residents Record', href: '/residentregistereds', icon: UserCheck },
-  { title: 'Zone', href: '/zones', icon: MapPin },
-  { title: "Barangay Clearance", href: "/barangay-clearances", icon: FileCheck },
-  { title: "Certificate of Indigency", href: "/certificate-indigenous", icon: FileText },
-  { title: 'Blotter Records', href: '/blotters', icon: ClipboardList },
-  { title: 'Request Document', href: '/documentrequests', icon: Folder },
-  { title: 'Household Record', href: '/households', icon: Users2 },
-  { title: 'Barangay Revenues', href: '/brgyrevenue', icon: CreditCard },
-  { title: 'Activity/Event', href: '/activities', icon: CalendarDays },
-  { title: 'Log', href: '/brgyrevenue', icon: Activity },
+// ✅ Make sure all route helpers are converted to string
+const navGroups: { label: string; items: NavItem[] }[] = [
+  {
+    label: "Dashboard",
+items: [{ title: "Dashboard", href: dashboard().url, icon: Home }],
+
+  },
+  {
+    label: "Management",
+    items: [
+      { title: "Barangay Officials", href: "/officials", icon: Users },
+      { title: "Residents Record", href: "/residentregistereds", icon: UserCheck },
+      { title: "Household Record", href: "/households", icon: Users2 },
+      { title: "Zone", href: "/zones", icon: MapPin },
+    ],
+  },
+  {
+    label: "Documents",
+    items: [
+      // ✅ Dropdown menu for Certificate of Indigency
+      { title: "Request Document", href: "/documentrequests", icon: Folder },
+      {
+        title: "Certificates",
+        icon: FileText,
+        isDropdown: true,
+        children: [
+          { title: "Barangay Clearance", href: "/barangay-clearances" },
+          { title: "Certificate of Indigency", href: "/certificate-indigency" },
+          { title: "Certificate of Good Moral", href: "/certificate-goodmoral" },
+          { title: "Certificate of Residency", href: "/certificate-residency" },
+        ],
+      },
+      { title: "Blotter Records", href: "/blotters", icon: ClipboardList },
+    ],
+  },
+  {
+    label: "Sanguniang Kabataan",
+    items: [
+      { title: "Request Document", href: "/documentrequests", icon: Folder },
+      {
+        title: "Certificates",
+        icon: FileText,
+        isDropdown: true,
+        children: [
+          { title: "Barangay Clearance", href: "/barangay-clearances" },
+          { title: "Certificate of Indigency", href: "/certificate-indigency" },
+          { title: "Certificate of Good Moral", href: "/certificate-goodmoral" },
+          { title: "Certificate of Residency", href: "/certificate-residency" },
+        ],
+      },
+      { title: "Blotter Records", href: "/blotters", icon: ClipboardList },
+    ],
+  },
+  
+  {
+    label: "Finance & Services",
+    items: [
+      { title: "Reports", href: "/brgyrevenue", icon: CreditCard },
+      { title: "Settings", href: "/services", icon: Settings },
+    ],
+  },
+  {
+    label: "Events",
+    items: [
+      { title: "Activity/Event", href: "/activities", icon: CalendarDays },
+      // { title: "Log", href: "/logs", icon: Activity },
+    ],
+  },
 ];
 
 export function AppSidebar() {
   return (
-    <Sidebar
-      collapsible="icon"
-      variant="inset"
-      className="bg-green-600"
-    >
+    <Sidebar collapsible="icon" variant="inset" className="bg-green-600 text-dark">
+      {/* Logo Section */}
       <SidebarHeader className="bg-green-600 flex flex-col items-center py-6">
-        <Link href={dashboard()} prefetch>
+        <Link href={String(dashboard())} prefetch>
           <AppLogo />
         </Link>
       </SidebarHeader>
 
-      <SidebarContent>
-        <NavMain items={mainNavItems} />
+      {/* Sidebar Menu Groups */}
+      <SidebarContent className="space-y-2">
+        {navGroups.map((group) => (
+          <div key={group.label}>
+            {/* Group Label */}
+            <p className="px-4 py-1 text-xs font-semibold uppercase text-green-800 tracking-wide">
+              {group.label}
+            </p>
+
+            {/* Menu Items */}
+            <div className="pl-2 space-y-1">
+              <NavMain items={group.items} />
+            </div>
+          </div>
+        ))}
       </SidebarContent>
 
+      {/* User Footer */}
       <SidebarFooter>
         <NavUser />
       </SidebarFooter>

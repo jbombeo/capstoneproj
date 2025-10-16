@@ -19,15 +19,14 @@ import {
 import AppLogo from './app-logo'; // ✅ custom logo
 
 const mainNavItems: NavItem[] = [
-  { title: 'Home', href: dashboard(), icon: LayoutGrid },
-  { title: 'ScholarShip', href: '/officials', icon: BookUser },
-  { title: 'Youth Profile', href: '/residents', icon: BookOpen },
-  { title: 'Program and Project', href: '/zones', icon: BookOpen },
-  { title: 'Scholarship', href: '/brgycertificates', icon: ShieldCheck },
-  { title: 'Financial management', href: '/certindigency', icon: BookUser },
-  { title: 'Officials/SK Council', href: '/blotters', icon: BookUser },
-  { title: 'Announcement and Events', href: '/document-requests', icon: Folder },
-  { title: 'Reports', href: '/households', icon: BookUser },
+    { title: 'Dashboard', href: '/dashboard', icon: LayoutGrid },
+    { title: 'Manage Scholarships', href: '/scholarships', icon: BookUser },
+    { title: 'Youth Profiles', href: '/youth', icon: BookOpen },
+    { title: 'Programs & Projects', href: '/projects', icon: BookOpen },
+    { title: 'Announcements & Events', href: '/announcements', icon: Folder },
+    { title: 'Reports', href: '/reports', icon: ShieldCheck },
+    { title: 'Financial Management', href: '/financial', icon: BookUser },
+    { title: 'SK Council / Officials', href: '/officials', icon: BookUser },
 
 ];
 

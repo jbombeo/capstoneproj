@@ -23,7 +23,7 @@ public function __invoke(Request $request): Response|RedirectResponse
             'admin' => redirect()->intended(route('dashboard')),
             'sk' => redirect()->intended(route('sk.dashboard')),
             'youth' => redirect()->intended(route('youth.dashboard')),
-            'resident' => redirect()->intended(route('resident.dashboard')),
+            'resident' => redirect()->intended(route('resident.home')),
             default => redirect()->intended(route('home')),
         };
     }

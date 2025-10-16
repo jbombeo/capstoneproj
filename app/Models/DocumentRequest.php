@@ -9,23 +9,44 @@ class DocumentRequest extends Model
 {
     use HasFactory;
 
-    // Include status so it can be mass-assigned
     protected $fillable = [
+        'user_id',
         'resident_id',
-        'document_type',
+        'document_type_id',
         'purpose',
         'request_date',
-        'status',           // ✅ new column
+        'status',
+        'release_name',
         'qr_token',
     ];
 
+    // A request belongs to a user
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    // A request belongs to a resident
     public function resident()
     {
         return $this->belongsTo(Resident::class);
-    }   
+    }
 
-public function payments()
-{
-    return $this->hasMany(DocumentPayment::class, 'document_request_id', 'id');
-}
+    // A request belongs to a document type
+    public function documentType()
+    {
+        return $this->belongsTo(DocumentType::class);
+    }
+
+    // A request has one payment (if you only allow one)
+    public function payment()
+    {
+        return $this->hasOne(DocumentPayment::class);
+    }
+
+    // 👉 If you expect multiple payments per request, swap to:
+    public function payments()
+    {
+        return $this->hasMany(DocumentPayment::class);
+    }
 }

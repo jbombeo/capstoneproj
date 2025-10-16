@@ -28,9 +28,14 @@ public function store(Request $request)
         'term_start'    => 'required|date',
         'term_end'      => 'required|date',
         'status'        => 'required|string',
+        'image'         => 'nullable|image|mimes:jpg,jpeg,png|max:2048', // new
     ]);
 
-    // attach logged-in user
+    if ($request->hasFile('image')) {
+        $path = $request->file('image')->store('officials', 'public');
+        $validated['image'] = $path;
+    }
+
     $validated['users_id'] = auth()->id();
 
     Official::create($validated);
@@ -49,12 +54,19 @@ public function update(Request $request, Official $official)
         'term_start' => 'required|date',
         'term_end' => 'required|date|after_or_equal:term_start',
         'status' => 'required|in:Active,Inactive,Leave',
+        'image'  => 'nullable|image|mimes:jpg,jpeg,png|max:2048', // new
     ]);
+
+    if ($request->hasFile('image')) {
+        $path = $request->file('image')->store('officials', 'public');
+        $validated['image'] = $path;
+    }
 
     $official->update($validated);
 
     return redirect()->route('officials.index')->with('success', 'Official updated successfully.');
 }
+
 
 public function destroy(Official $official)
 {

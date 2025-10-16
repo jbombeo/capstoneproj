@@ -1,274 +1,197 @@
 <?php
 
 use Tighten\Ziggy\Ziggy;
-// use App\Http\Controllers\Auth\RegisterResidentController;
+use App\Http\Controllers\ResidentActivityController;
+use App\Http\Controllers\ScholarshipController;
+use App\Http\Controllers\LogController;
+use App\Http\Controllers\ResidentSettingsController;
+use App\Http\Controllers\DocumentTypeController;
+use App\Http\Controllers\ResidentOfficialController;
+use App\Http\Controllers\DocumentRequestResidentController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ResidentUserController;
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\DocumentRequestController;
 use App\Http\Controllers\ZoneController;
 use App\Http\Controllers\RevenueController;
 use App\Http\Controllers\HouseholdController;
-use App\Http\Controllers\RequestDocController;
 use App\Http\Controllers\ResidentController;
 use App\Http\Controllers\BlotterController;
-use App\Http\Controllers\CertIndigencyController;
 use App\Http\Controllers\BrgyOfficialController;
-use App\Http\Controllers\BrgycertificatesController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
     return Inertia::render('welcome');
-    })->name('home');
+})->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    // General Dashboard for Admin
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard')->middleware('role:admin');
+    // ---------------- DASHBOARDS ----------------
+    Route::get('dashboard', fn() => Inertia::render('dashboard'))
+        ->name('dashboard')
+        ->middleware('role:admin');
 
-    // General Dashboard for Secretary
-    Route::get('secretary-dashboard', function () {
-        return Inertia::render('secretary/dashboard');
-    })->name('secretary.dashboard')->middleware('role:secretary');
+    Route::get('secretary-dashboard', fn() => Inertia::render('secretary/dashboard'))
+        ->name('secretary.dashboard')
+        ->middleware('role:secretary');
 
-    // SK Dashboard
-    Route::get('sk-dashboard', function () {
-        return Inertia::render('sk/dashboard');
-    })->name('sk.dashboard')->middleware('role:sk');
+    Route::get('sk-dashboard', fn() => Inertia::render('sk/dashboard'))
+        ->name('sk.dashboard')
+        ->middleware('role:sk');
 
-    // Youth Dashboard
-    Route::get('youth-dashboard', function () {
-        return Inertia::render('youth/dashboard');
-    })->name('youth.dashboard')->middleware('role:youth');
+    Route::get('youth-dashboard', fn() => Inertia::render('youth/dashboard'))
+        ->name('youth.dashboard')
+        ->middleware('role:youth');
 
-        // Resident Dashboard
-    // Route::get('resident-dashboard', function () {
-    //     return Inertia::render('resident/dashboard');
-    // })->name('resident.dashboard')->middleware('role:resident');
+    Route::get('resident-dashboard', fn() => Inertia::render('resident/dashboard'))
+        ->name('resident.home')
+        ->middleware('role:resident');
 
+    // ---------------- BARANGAY OFFICIALS ----------------
+    Route::middleware(['role:admin,secretary'])->group(function () {
+        Route::resource('officials', BrgyOfficialController::class)->except(['show', 'create', 'edit']);
+    });
 
+    // ---------------- RESIDENT REGISTRATION ----------------
+    Route::get('/residentregister', [ResidentController::class, 'create'])->name('residentregister.create');
+    Route::post('/residentregister', [ResidentController::class, 'store'])->name('residentregister.store');
 
+    // Manage Registered Residents
+    Route::prefix('residentregistereds')->group(function () {
+        Route::get('/', [ResidentController::class, 'index'])->name('residentregistereds.index');
+        Route::get('/pending', [ResidentController::class, 'pending'])->name('residentregistereds.pending');
+        Route::post('/{resident}/approve', [ResidentController::class, 'approve'])->name('residentregistereds.approve');
+        Route::post('/{resident}/reject', [ResidentController::class, 'reject'])->name('residentregistereds.reject');
+        Route::get('/{resident}', [ResidentController::class, 'show'])->name('residentregistereds.show');
+    });
 
-    // // Admin approval
-    // Route::post('/resident/{user}/approve', [RegisterResidentController::class, 'approve'])
-    // ->middleware(['auth', 'can:approve-resident'])
-    // ->name('residentregister.approve');
+    // ---------------- DOCUMENT REQUESTS (ADMIN) ----------------
+    Route::prefix('documentrequests')->group(function () {
+        Route::get('/', [DocumentRequestController::class, 'index'])->name('document-requests.index');
+        Route::post('/', [DocumentRequestController::class, 'store'])->name('document-requests.store');
 
-    // Route::delete('/resident/{user}/reject', [RegisterResidentController::class, 'reject'])
-    // ->middleware(['auth', 'can:approve-resident'])
-    // ->name('residentregister.reject');
+        Route::put('/{documentRequest}/accept', [DocumentRequestController::class, 'accept'])->name('document-requests.accept');
+        Route::put('/{documentRequest}/decline', [DocumentRequestController::class, 'decline'])->name('document-requests.decline');
+        Route::put('/{documentRequest}/status', [DocumentRequestController::class, 'updateStatus'])->name('document-requests.update-status');
+        Route::put('/{documentRequest}/ready', [DocumentRequestController::class, 'markAsReady'])->name('document-requests.ready');
 
-    // For Official Page
-    Route::get('/officials', [BrgyOfficialController::class, 'index'])
-        ->name('officials.index')->middleware('role:admin,secretary');
-    Route::post('/officials', [BrgyOfficialController::class, 'store'])
-        ->name('officials.store')->middleware('role:admin,secretary'); 
-    Route::delete('/officials/{official}', [BrgyOfficialController::class, 'destroy'])
-        ->name('officials.destroy')->middleware('role:admin,secretary');
-    Route::put('/officials/{official}', [BrgyOfficialController::class, 'update'])
-        ->name('officials.update')->middleware('role:admin,secretary');
+        // QR Code + Release
+        Route::get('/{documentRequest}/qrcode', [DocumentRequestController::class, 'qrcode'])->name('documentrequests.qrcode');
+        Route::post('/release/{token}', [DocumentRequestController::class, 'release'])->name('documentrequests.release');
+        Route::get('/release/{token}', [DocumentRequestController::class, 'releaseStatus'])->name('documentrequests.release.status');
+    });
 
-        // Resident Register
-    Route::get('/residentregister', [ResidentController::class, 'create'])
-        ->name('residentregister.create');
+    // ---------------- PRINTABLE DOCUMENTS ----------------
+    Route::get('/barangay-clearances', [DocumentRequestController::class, 'barangayClearance'])->name('barangay.clearances');
+    Route::get('/barangay-clearances/{documentRequest}/print', [DocumentRequestController::class, 'print'])->name('barangay-clearances.print');
 
-    Route::post('/residentregister', [ResidentController::class, 'store'])
-        ->name('residentregister.store');
+    Route::get('/certificate-indigency', [DocumentRequestController::class, 'certificateOfIndigency'])->name('certificate.indigency');
+    Route::get('/certificate-indigency/{documentRequest}/print', [DocumentRequestController::class, 'print'])->name('certificate.indigency.print');
 
-    // Admin approval
-    // Route::post('/resident/{user}/approve', [ResidentController::class, 'approve'])
-    // ->middleware(['auth', 'can:approve-resident'])
-    // ->name('residentregister.approve');
+    Route::get('/certificate-goodmoral', [DocumentRequestController::class, 'certificateOfGoodMoral'])->name('certificate.goodmoral');
+    Route::get('/certificate-goodmoral/{documentRequest}/print', [DocumentRequestController::class, 'print'])->name('certificate.goodmoral.print');
 
-    // Route::delete('/resident/{user}/reject', [ResidentController::class, 'reject'])
-    // ->middleware(['auth', 'can:approve-resident'])
-    // ->name('residentregister.reject');
+    Route::get('/certificate-residency', [DocumentRequestController::class, 'certificateOfResidency'])->name('certificate.residency');
+    Route::get('/certificate-residency/{documentRequest}/print', [DocumentRequestController::class, 'print'])->name('certificate.residency.print');
 
+    // ---------------- BLOTTERS ----------------
+    Route::middleware(['role:admin,secretary'])->group(function () {
+        Route::resource('blotters', BlotterController::class)->except(['show', 'create']);
+    });
 
-    
-    // Admin routes for residents
-// Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
-    
-    // List all residents
-    Route::get('/residentregistereds', [ResidentController::class, 'index'])
-        ->name('residentregistereds.index');
+    // ---------------- HOUSEHOLDS ----------------
+    Route::middleware(['role:admin,secretary'])->group(function () {
+        Route::resource('households', HouseholdController::class)->except(['show', 'create']);
+    });
 
-    // Pending residents
-    
-    Route::get('/residentregistereds/pending', [ResidentController::class, 'pending'])
-        ->name('residentregistereds.pending');
-
-    // Approve a resident
-    Route::post('/residentregistereds/{resident}/approve', [ResidentController::class, 'approve'])
-        ->name('residentregistereds.approve');
-
-    // Reject a resident
-    Route::post('/residentregistereds/{resident}/reject', [ResidentController::class, 'reject'])
-    ->name('residentregistereds.reject');
-
-    // Show a resident details
-    Route::get('/residentregistereds/{resident}', [ResidentController::class, 'show'])
-        ->name('residentregistereds.show');
-// });
-
-
-
-
-    //     // List all document requests (admin)
-    // Route::get('/document-requests', [DocumentRequestController::class, 'index'])
-    //     ->name('document-requests.index');
-    // Route::post('/document-requests', [DocumentRequestController::class, 'store'])
-    //     ->name('document-requests.store');
-
-    // // Accept a request (admin) → sets status to processed & redirects to proper print page
-    // Route::post('/document-requests/{documentRequest}/accept', [DocumentRequestController::class, 'accept'])
-    //     ->name('document.requests.accept');
-
-    // // Decline a request (admin)
-    // Route::post('/document-requests/{documentRequest}/decline', [DocumentRequestController::class, 'decline'])
-    //     ->name('document.requests.decline');
-
-    // // Update status dynamically (used for ready_for_release or released)
-    // Route::put('/document-requests/{documentRequest}/status', [DocumentRequestController::class, 'updateStatus'])
-    //     ->name('document.requests.updateStatus');
-
-    // // Print document
-    // Route::get('/document-requests/{documentRequest}/print', [DocumentRequestController::class, 'print'])
-    //     ->name('document.requests.print');
-
-    // // Release document via QR scan
-    // Route::post('/document-requests/{documentRequest}/release', [DocumentRequestController::class, 'releaseViaQR'])
-    //     ->name('document.requests.release');
-
-
-
-    // Route::post('/document-requests/{documentRequest}/accept', [DocumentRequestController::class, 'accept'])
-    //     ->name('document-requests.accept');
-    // Route::get('/document-requests/release/{qr_token}', [DocumentRequestController::class, 'releaseByQr'])
-    //     ->name('document-requests.release');
-
-    // Route::get('/BarangayClearances', [DocumentController::class, 'BarangayClearance'])
-    //     ->name('barangay.clearances');
-    // Route::get('/CertificateOfIndigenous', [DocumentController::class, 'CertificateOfIndigenous'])
-    //     ->name('certificate.indigenous');
-
-    // For Blotters Page
-    Route::get('/blotters', [BlotterController::class, 'index'])
-        ->name('blotters.index')->middleware('role:admin,secretary');
-    Route::post('/blotters', [BlotterController::class, 'store'])
-        ->name('blotters.store')->middleware('role:admin,secretary');
-    Route::get('/blotters/{blotter}/edit', [BlotterController::class, 'edit'])
-        ->name('blotters.edit')->middleware('role:admin,secretary');
-    Route::put('/blotters/{blotter}', [BlotterController::class, 'update'])
-        ->name('blotters.update')->middleware('role:admin,secretary');
-    Route::delete('/blotters/{blotter}', [BlotterController::class, 'destroy'])
-        ->name('blotters.destroy')->middleware('role:admin,secretary');
-
-// ------------------ DOCUMENT REQUESTS ------------------
-
-// Admin: List all document requests
-// ------------------ DOCUMENT REQUESTS ------------------
-
-// Admin: List all document requests
-Route::get('/documentrequests', [DocumentRequestController::class, 'index'])
-    ->name('document-requests.index');
-
-// Resident: Submit new request
-Route::post('/documentrequests', [DocumentRequestController::class, 'store'])
-    ->name('document-requests.store');
-
-// Admin: Accept request (status → on process)
-Route::put('/documentrequests/{documentRequest}/accept', [DocumentRequestController::class, 'accept'])
-    ->name('document-requests.accept');
-
-// Admin: Decline request
-Route::put('/documentrequests/{documentRequest}/decline', [DocumentRequestController::class, 'decline'])
-    ->name('document-requests.decline');
-
-// Admin: Update request status dynamically
-Route::put('/documentrequests/{documentRequest}/status', [DocumentRequestController::class, 'updateStatus'])
-    ->name('document-requests.update-status');
-
-// QR Code generation (uses qr_token)
-Route::get('/documentrequests/{documentRequest}/qrcode', [DocumentRequestController::class, 'qrcode'])
-    ->name('documentrequests.qrcode');
-
-// Release via QR scan
-Route::get('/documentrequests/release/{qr_token}', [DocumentRequestController::class, 'releaseByQr'])
-    ->name('documentrequests.release');
-
-// ------------------ BARANGAY CLEARANCE ------------------
-
-// Admin: List all Barangay Clearance requests
-Route::get('/barangay-clearances', [DocumentRequestController::class, 'barangayClearance'])
-    ->name('barangay.clearances');
-
-// Print specific Barangay Clearance
-Route::get('/barangay-clearances/{documentRequest}/print', [DocumentRequestController::class, 'print'])
-    ->name('barangay-clearances.print');
-
-// ------------------ CERTIFICATE OF INDIGENOUS ------------------
-
-// Admin: List all Certificate of Indigenous requests
-Route::get('/certificate-indigenous', [DocumentRequestController::class, 'certificateOfIndigenous'])
-    ->name('certificate.indigenous');
-
-// Print specific Certificate of Indigenous
-Route::get('/certificate-indigenous/{documentRequest}/print', [DocumentRequestController::class, 'print'])
-    ->name('certificate.indigenous.print');
-    
-    // Households
-    Route::get('/households', [HouseholdController::class, 'index'])->name('households.index')->middleware('role:admin,secretary');
-    Route::post('/households', [HouseholdController::class, 'store'])->name('households.store')->middleware('role:admin,secretary');
-    Route::get('/households/{household}/edit', [HouseholdController::class, 'edit'])->name('households.edit')->middleware('role:admin,secretary');
-    Route::put('/households/{household}', [HouseholdController::class, 'update'])->name('households.update')->middleware('role:admin,secretary');
-    Route::delete('/households/{household}', [HouseholdController::class, 'destroy'])->name('households.destroy')->middleware('role:admin,secretary');
-
-    // Revenue
+    // ---------------- REVENUE ----------------
     Route::get('brgyrevenue', [RevenueController::class, 'index'])->name('brgyrevenue')->middleware('role:admin,secretary');
 
-    // Zones
-    Route::get('/zones', [ZoneController::class, 'index'])->name('zones.index')->middleware('role:admin,secretary');
-    Route::post('/zones', [ZoneController::class, 'store'])->name('zones.store')->middleware('role:admin,secretary');
-    Route::get('/zones/{zone}/edit', [ZoneController::class, 'edit'])->name('zones.edit')->middleware('role:admin,secretary');
-    Route::put('/zones/{zone}', [ZoneController::class, 'update'])->name('zones.update')->middleware('role:admin,secretary');
-    Route::delete('/zones/{zone}', [ZoneController::class, 'destroy'])->name('zones.destroy')->middleware('role:admin,secretary');
+    // ---------------- ZONES ----------------
+    Route::middleware(['role:admin,secretary'])->group(function () {
+        Route::resource('zones', ZoneController::class)->except(['show', 'create']);
+    });
+
+    // ---------------- ACTIVITIES ----------------
+    Route::middleware(['role:admin,secretary'])->group(function () {
+        Route::resource('activities', ActivityController::class)->except(['show']);
+    });
+    Route::get('/activities/{activity}', [ActivityController::class, 'show'])
+        ->name('activities.show')
+        ->middleware('role:admin,secretary,user');
+
+    // ---------------- DOCUMENT TYPES (Services) ----------------
+    Route::resource('services', DocumentTypeController::class)->except(['show', 'create', 'edit']);
+
+    // ---------------- RESIDENT ROUTES ----------------
+Route::middleware(['auth', 'role:resident'])
+    ->prefix('resident')
+    ->name('resident.')
+    ->group(function () {
+        Route::get('/home', [ResidentUserController::class, 'home'])->name('home');
+
+        // Profile
+        Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
+        Route::put('/profile/update/{id}', [ProfileController::class, 'update'])->name('profile.update');
+        Route::get('/profile/{id}', [ProfileController::class, 'show'])->name('profile.show');
+
+        // Officials (view only)
+        Route::get('/officials', [ResidentOfficialController::class, 'index'])->name('officials.index');
+
+        // Document Requests
+        Route::get('/document-requests', [DocumentRequestResidentController::class, 'index'])
+            ->name('documentrequests.index');
+        Route::post('/document-requests', [DocumentRequestResidentController::class, 'store'])
+            ->name('documentrequests.store');
+        Route::get('/document-requests/{id}', [DocumentRequestResidentController::class, 'show'])
+            ->name('documentrequests.show');
+
+        // Other resident services
+        Route::get('/request', [ResidentUserController::class, 'request'])->name('request');
+        Route::get('/blotter', [ResidentUserController::class, 'blotter'])->name('blotter');
+        // -----------------------------
+        // Activities / Events (new)
+        // -----------------------------
+        Route::get('/activities', [ResidentActivityController::class, 'index'])
+            ->name('activities');
+        Route::get('/activities/{id}', [ResidentActivityController::class, 'show'])
+            ->name('activities.show');
+
+        // Sub-pages
+        Route::get('/barangay-clearance', [ResidentUserController::class, 'barangayClearance'])->name('barangay.clearance');
+        Route::get('/certificate-indigenous', [ResidentUserController::class, 'certificateIndigenous'])->name('certificate.indigenous');
+    });
+        // ⚙️ Settings
+        Route::prefix('settings')->name('settings.')->group(function () {
+            Route::get('/', [ResidentSettingsController::class, 'index'])->name('index');
+            Route::get('/password', [ResidentSettingsController::class, 'password'])->name('password');
+            Route::put('/password', [ResidentSettingsController::class, 'update'])->name('password.update');
+        });
+    });
 
 
-    // --- View (everyone: admin, secretary, user) ---
-Route::get('/activities', [ActivityController::class, 'index'])
-    ->name('activities.index')
-    ->middleware('role:admin,secretary');
 
-Route::get('/activities/{activity}', [ActivityController::class, 'show'])
-    ->name('activities.show')
-    ->middleware('role:admin,secretary,user');
+//     // Dashboard or home route
+// Route::get('/dashboard', function () {
+//     return Inertia\Inertia::render('Dashboard');
+// })->name('dashboard')->middleware(['auth']);
 
-// --- Manage (only admin, secretary) ---
-Route::get('/activities/create', [ActivityController::class, 'create'])
-    ->name('activities.create')
-    ->middleware('role:admin,secretary');
+// Scholarship Routes (SK Official)
+Route::middleware(['auth', 'role:sk'])->group(function () {
+    // Show all scholarships + inline create/edit
+    Route::get('/scholarships', [ScholarshipController::class, 'index'])->name('scholarships.index');
 
-Route::post('/activities', [ActivityController::class, 'store'])
-    ->name('activities.store')
-    ->middleware('role:admin,secretary');
+    // Create a new scholarship
+    Route::post('/scholarships', [ScholarshipController::class, 'store'])->name('scholarships.store');
 
-Route::get('/activities/{activity}/edit', [ActivityController::class, 'edit'])
-    ->name('activities.edit')
-    ->middleware('role:admin,secretary');
+    // Update an existing scholarship (inline edit)
+    Route::put('/scholarships/{scholarship}', [ScholarshipController::class, 'update'])->name('scholarships.update');
 
-Route::put('/activities/{activity}', [ActivityController::class, 'update'])
-    ->name('activities.update')
-    ->middleware('role:admin,secretary');
-
-Route::delete('/activities/{activity}', [ActivityController::class, 'destroy'])
-    ->name('activities.destroy')
-    ->middleware('role:admin,secretary');
-    
-    
+    // Delete a scholarship
+    Route::delete('/scholarships/{scholarship}', [ScholarshipController::class, 'destroy'])->name('scholarships.destroy');
 });
 
 
-require __DIR__.'/settings.php';
-require __DIR__.'/auth.php';
+require __DIR__ . '/settings.php';
+require __DIR__ . '/auth.php';

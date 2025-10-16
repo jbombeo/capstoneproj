@@ -25,6 +25,7 @@ interface Official {
   term_end: string;
   status: string;
   users_id: number;
+  image?: string | null;
 }
 
 interface OfficialPageProps extends InertiaPageProps {
@@ -47,6 +48,7 @@ export default function OfficialPage() {
     term_start: "",
     term_end: "",
     status: "Active",
+    image: null as File | null,
   });
 
   // Filtered search
@@ -56,7 +58,13 @@ export default function OfficialPage() {
 
   // Add official
   const handleAddOfficial = () => {
-    router.post("/officials", formData, {
+    const data = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      if (value !== null) data.append(key, value as any);
+    });
+
+    router.post("/officials", data, {
+      headers: { "Content-Type": "multipart/form-data" },
       onSuccess: () => {
         setFormData({
           position: "",
@@ -66,6 +74,7 @@ export default function OfficialPage() {
           term_start: "",
           term_end: "",
           status: "Active",
+          image: null,
         });
         setOpenAdd(false);
         alert("Official added successfully!");
@@ -84,6 +93,7 @@ export default function OfficialPage() {
       term_start: official.term_start,
       term_end: official.term_end,
       status: official.status,
+      image: null,
     });
     setOpenEdit(true);
   };
@@ -92,7 +102,13 @@ export default function OfficialPage() {
   const handleUpdateOfficial = () => {
     if (!editingOfficial) return;
 
-    router.put(`/officials/${editingOfficial.id}`, formData, {
+    const data = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      if (value !== null) data.append(key, value as any);
+    });
+
+    router.post(`/officials/${editingOfficial.id}?_method=PUT`, data, {
+      headers: { "Content-Type": "multipart/form-data" },
       onSuccess: () => {
         setOpenEdit(false);
         setEditingOfficial(null);
@@ -143,22 +159,35 @@ export default function OfficialPage() {
               </DialogHeader>
 
               <div className="space-y-4 mt-2">
-                {["position", "complete_name", "contact", "address"].map(
-                  (field) => (
-                    <div key={field}>
-                      <Label>{field.replace("_", " ").toUpperCase()}</Label>
-                      <Input
-                        value={(formData as any)[field]}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            [field]: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                  )
-                )}
+                {/* Position Dropdown */}
+                <div>
+                  <Label>Position</Label>
+                  <select
+                    className="border rounded px-2 py-1 w-full"
+                    value={formData.position}
+                    onChange={(e) =>
+                      setFormData({ ...formData, position: e.target.value })
+                    }
+                  >
+                    <option value="">Select Position</option>
+                    <option value="Punong Barangay">Punong Barangay</option>
+                    <option value="Barangay Kagawad">Barangay Kagawad</option>
+                    <option value="Secretary">Secretary</option>
+                  </select>
+                </div>
+
+                {["complete_name", "contact", "address"].map((field) => (
+                  <div key={field}>
+                    <Label>{field.replace("_", " ").toUpperCase()}</Label>
+                    <Input
+                      value={(formData as any)[field]}
+                      onChange={(e) =>
+                        setFormData({ ...formData, [field]: e.target.value })
+                      }
+                    />
+                  </div>
+                ))}
+
                 <div>
                   <Label>Term Start</Label>
                   <Input
@@ -181,11 +210,28 @@ export default function OfficialPage() {
                 </div>
                 <div>
                   <Label>Status</Label>
-                  <Input
+                  <select
+                    className="border rounded px-2 py-1 w-full"
                     value={formData.status}
                     onChange={(e) =>
                       setFormData({ ...formData, status: e.target.value })
                     }
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                    <option value="Leave">Leave</option>
+                  </select>
+                </div>
+                <div>
+                  <Label>Image</Label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      if (e.target.files) {
+                        setFormData({ ...formData, image: e.target.files[0] });
+                      }
+                    }}
                   />
                 </div>
               </div>
@@ -208,6 +254,7 @@ export default function OfficialPage() {
             <table className="w-full text-sm text-left border-collapse">
               <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
                 <tr>
+                  <th className="px-4 py-2">Image</th>
                   <th className="px-4 py-2">Position</th>
                   <th className="px-4 py-2">Name</th>
                   <th className="px-4 py-2">Contact</th>
@@ -225,6 +272,17 @@ export default function OfficialPage() {
                       key={official.id}
                       className="border-b hover:bg-gray-50 transition"
                     >
+                      <td className="px-4 py-2">
+                        {official.image ? (
+                          <img
+                            src={`/storage/${official.image}`}
+                            alt={official.complete_name}
+                            className="w-12 h-12 rounded-full object-cover"
+                          />
+                        ) : (
+                          "No image"
+                        )}
+                      </td>
                       <td className="px-4 py-2">{official.position}</td>
                       <td className="px-4 py-2">{official.complete_name}</td>
                       <td className="px-4 py-2">{official.contact}</td>
@@ -252,7 +310,7 @@ export default function OfficialPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={8} className="text-center py-4 text-gray-500">
+                    <td colSpan={9} className="text-center py-4 text-gray-500">
                       No officials found
                     </td>
                   </tr>
@@ -271,22 +329,35 @@ export default function OfficialPage() {
           </DialogHeader>
 
           <div className="space-y-4 mt-2">
-            {["position", "complete_name", "contact", "address"].map(
-              (field) => (
-                <div key={field}>
-                  <Label>{field.replace("_", " ").toUpperCase()}</Label>
-                  <Input
-                    value={(formData as any)[field]}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        [field]: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-              )
-            )}
+            {/* Position Dropdown */}
+            <div>
+              <Label>Position</Label>
+              <select
+                className="border rounded px-2 py-1 w-full"
+                value={formData.position}
+                onChange={(e) =>
+                  setFormData({ ...formData, position: e.target.value })
+                }
+              >
+                <option value="">Select Position</option>
+                <option value="Punong Barangay">Punong Barangay</option>
+                <option value="Barangay Kagawad">Barangay Kagawad</option>
+                <option value="Secretary">Secretary</option>
+              </select>
+            </div>
+
+            {["complete_name", "contact", "address"].map((field) => (
+              <div key={field}>
+                <Label>{field.replace("_", " ").toUpperCase()}</Label>
+                <Input
+                  value={(formData as any)[field]}
+                  onChange={(e) =>
+                    setFormData({ ...formData, [field]: e.target.value })
+                  }
+                />
+              </div>
+            ))}
+
             <div>
               <Label>Term Start</Label>
               <Input
@@ -307,21 +378,32 @@ export default function OfficialPage() {
                 }
               />
             </div>
-<div>
-  <Label>Status</Label>
-  <select
-    className="border rounded px-2 py-1 w-full"
-    value={formData.status}
-    onChange={(e) =>
-      setFormData({ ...formData, status: e.target.value })
-    }
-  >
-    <option value="Active">Active</option>
-    <option value="Inactive">Inactive</option>
-    <option value="Leave">Leave</option>
-  </select>
-</div>
-
+            <div>
+              <Label>Status</Label>
+              <select
+                className="border rounded px-2 py-1 w-full"
+                value={formData.status}
+                onChange={(e) =>
+                  setFormData({ ...formData, status: e.target.value })
+                }
+              >
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+                <option value="Leave">Leave</option>
+              </select>
+            </div>
+            <div>
+              <Label>Image</Label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  if (e.target.files) {
+                    setFormData({ ...formData, image: e.target.files[0] });
+                  }
+                }}
+              />
+            </div>
           </div>
 
           <DialogFooter className="mt-4">

@@ -3,37 +3,36 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
 class AuthenticatedSessionController extends Controller
 {
     /**
-     * Display the login view.
+     * Show login view.
      */
     public function create()
     {
-        // Using Inertia
-        return inertia('auth/login');
-
-        // Or Blade: return view('auth.login');
+        return inertia('auth/login'); // Inertia
+        // return view('auth.login'); // Or Blade
     }
 
     /**
-     * Handle an incoming authentication request.
+     * Handle login.
      */
     public function store(Request $request)
     {
+        // Validate credentials
         $credentials = $request->validate([
-            'email'    => ['required','email'],
+            'email'    => ['required', 'email'],
             'password' => ['required'],
         ]);
 
         // Attempt login
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+        if (!Auth::attempt($credentials, $request->boolean('remember'))) {
             throw ValidationException::withMessages([
                 'email' => __('The provided credentials do not match our records.'),
             ]);
@@ -43,8 +42,8 @@ class AuthenticatedSessionController extends Controller
 
         $user = Auth::user();
 
-        // Block resident, sk, youth if not approved
-        if (in_array($user->role, ['resident', 'sk', 'youth']) && ! $user->is_approved) {
+        // Check approval for resident / sk / youth
+        if (in_array($user->role, ['resident', 'sk', 'youth']) && !$user->is_approved) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
@@ -54,21 +53,17 @@ class AuthenticatedSessionController extends Controller
             ]);
         }
 
-        // Redirect each role to their dashboard
-        switch ($user->role) {
-            case 'admin':
-                return redirect()->route('dashboard');
-            case 'sk':
-                return redirect()->route('sk.dashboard');
-            case 'youth':
-                return redirect()->route('youth.dashboard');
-            default: // resident
-                return redirect()->route('resident.dashboard');
-        }
+        // Redirect to dashboard based on role
+        return match($user->role) {
+            'admin' => redirect()->route('dashboard'),
+            'sk' => redirect()->route('sk.dashboard'),
+            'youth' => redirect()->route('youth.dashboard'),
+            default => redirect()->route('resident.home'), // resident
+        };
     }
 
     /**
-     * Destroy an authenticated session.
+     * Logout
      */
     public function destroy(Request $request)
     {

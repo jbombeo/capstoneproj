@@ -15,6 +15,7 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->string('role')->default('resident'); // admin / sk / youth / resident
+            $table->boolean('is_approved')->default(true); // approval status
             $table->rememberToken();
             $table->timestamps();
         });

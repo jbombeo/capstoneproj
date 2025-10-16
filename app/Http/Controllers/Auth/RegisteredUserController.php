@@ -48,7 +48,7 @@ class RegisteredUserController extends Controller
 
         // ✅ Optional: redirect based on role
         return match ($user->role) {
-            'resident'     => redirect()->route('resident.dashboard'),
+            'resident'     => redirect()->route('resident.home'),
             'sk'     => redirect()->route('sk.dashboard'),
             'youth'  => redirect()->route('youth.dashboard'),
             'admin'  => redirect()->route('dashboard'), // or an admin dashboard

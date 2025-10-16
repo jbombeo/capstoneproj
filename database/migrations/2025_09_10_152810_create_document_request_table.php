@@ -10,15 +10,20 @@ return new class extends Migration {
     {
         Schema::create('document_requests', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('resident_id')->constrained('resident')->onDelete('cascade');
-            $table->string('document_type', 50); // e.g. Barangay Certificate
+
+            // link to document_types
+            $table->foreignId('document_type_id')
+                  ->constrained('document_types')
+                  ->onDelete('restrict');
+
             $table->text('purpose')->nullable();
             $table->date('request_date')->useCurrent();
 
-            // ✅ Add status column with default value 'pending'
             $table->enum('status', ['pending', 'on process', 'ready for pick-up', 'released'])
                   ->default('pending');
-                  
+            $table->text('release_name')->nullable();      
             $table->string('qr_token', 100)->nullable()->unique();
 
             $table->timestamps();
@@ -30,4 +35,3 @@ return new class extends Migration {
         Schema::dropIfExists('document_requests');
     }
 };
-

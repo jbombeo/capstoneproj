@@ -18,6 +18,7 @@ class Official extends Model
         'address',
         'term_start',
         'term_end',
+        'image',
         'status',
         'users_id',
     ];

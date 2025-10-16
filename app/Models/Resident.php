@@ -47,6 +47,11 @@ class Resident extends Model
         return $this->belongsTo(User::class);
     }
 
+        public function requests()
+    {
+        return $this->hasMany(DocumentRequest::class);
+    }
+    
     public function zone()
     {
         return $this->belongsTo(Zone::class);
@@ -58,4 +63,8 @@ class Resident extends Model
             . ($this->middle_name ? ' '.$this->middle_name : '')
             . ' '.$this->last_name;
     }
+    public function resident()
+{
+    return $this->hasOne(Resident::class);
+}
 }

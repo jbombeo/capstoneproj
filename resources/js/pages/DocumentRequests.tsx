@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import AppLayout from "@/layouts/app-layout";
 import { Head, usePage } from "@inertiajs/react";
 import { PageProps as InertiaPageProps } from "@inertiajs/core";
@@ -13,102 +13,147 @@ interface Resident {
   last_name: string;
 }
 
+interface DocumentType {
+  id: number;
+  name: string;
+  amount: number;
+}
+
 interface DocumentPayment {
   id: number;
-  payment_method: string;
-  amount: string;
-  or_number: string;
+  payment_method: "cash" | "gcash" | "free";
+  amount: number;
+  or_number?: string;
+  reference_number?: string;
 }
 
 interface DocumentRequest {
   id: number;
   resident: Resident;
-  document_type: string;
+  document_type: DocumentType;
   purpose: string;
-  status: string;
+  status: "pending" | "on process" | "ready for pick-up" | "released" | "declined";
   payments?: DocumentPayment[];
 }
 
 interface PageProps extends InertiaPageProps {
   requests: DocumentRequest[];
   residents: Resident[];
+  documentTypes: DocumentType[];
+}
+
+interface FormState {
+  resident_id: string;
+  document_type_id: number;
+  purpose: string;
+  payment_method: "cash" | "gcash" | "free";
+  amount: string;
+  reference_number: string;
 }
 
 export default function DocumentRequests() {
   const { props } = usePage<PageProps>();
   const [requests, setRequests] = useState<DocumentRequest[]>(props.requests || []);
   const [residents] = useState<Resident[]>(props.residents || []);
-  const [showModal, setShowModal] = useState(false);
+  const [documentTypes] = useState<DocumentType[]>(props.documentTypes || []);
   const [search, setSearch] = useState("");
+  const [showModal, setShowModal] = useState(false);
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<FormState>({
     resident_id: "",
-    document_type: "Barangay Clearance",
+    document_type_id: 0,
     purpose: "",
-    payment_method: "Cash",
-    amount: "",
+    payment_method: "cash",
+    amount: "0",
+    reference_number: "",
   });
 
-  // Accept request
+  // Auto-update amount when document type changes
+  useEffect(() => {
+    const selectedDoc = documentTypes.find(dt => dt.id === form.document_type_id);
+    setForm(prev => ({ ...prev, amount: selectedDoc ? selectedDoc.amount.toString() : "0" }));
+  }, [form.document_type_id, documentTypes]);
+
+  const formatCurrency = (value?: number | string) => {
+    const number = Number(value ?? 0);
+    return `₱${number.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
   const handleAccept = async (req: DocumentRequest) => {
     try {
-      const response = await axios.put(`/documentrequests/${req.id}/accept`);
+      const response = await axios.put<{ status: DocumentRequest["status"] }>(`/documentrequests/${req.id}/accept`);
+      const newStatus = response.data.status;
+
       setRequests(prev =>
-        prev.map(r => (r.id === req.id ? { ...r, status: response.data.status } : r))
+        prev.map(r => (r.id === req.id ? { ...r, status: newStatus } : r))
       );
     } catch (error) {
       console.error("Failed to accept request:", error);
+      alert("Failed to accept request.");
     }
   };
 
-  // Submit new request
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!form.resident_id) return alert("Please select a resident.");
+    if (!form.document_type_id) return alert("Please select a document type.");
+    if (!form.purpose.trim()) return alert("Please enter a purpose.");
+    if (form.payment_method === "gcash" && !form.reference_number.trim()) return alert("Please enter GCash reference number.");
+
+    const payload = {
+      resident_id: form.resident_id,
+      document_type_id: form.document_type_id,
+      purpose: form.purpose,
+      payment_method: form.payment_method,
+      amount: form.payment_method === "free" ? 0 : Number(form.amount),
+      reference_number: form.payment_method === "gcash" ? form.reference_number : null,
+    };
+
     try {
-      const response = await axios.post("/documentrequests", form);
-      const newRequest: DocumentRequest = response.data;
-      setRequests(prev => [...prev, newRequest]);
+      const response = await axios.post<DocumentRequest>("/documentrequests", payload);
+      setRequests(prev => [...prev, response.data]);
+
       setForm({
         resident_id: "",
-        document_type: "Barangay Clearance",
+        document_type_id: 0,
         purpose: "",
-        payment_method: "Cash",
-        amount: "",
+        payment_method: "cash",
+        amount: "0",
+        reference_number: "",
       });
+
       setShowModal(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to submit request:", error);
+      alert(error.response?.data?.message || "Failed to submit request.");
     }
   };
 
-  const filteredRequests = requests.filter((req) =>
-    `${req.resident.first_name} ${req.resident.last_name}`
-      .toLowerCase()
-      .includes(search.toLowerCase())
+  const filteredRequests = requests.filter(req =>
+    `${req.resident.first_name} ${req.resident.last_name}`.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <AppLayout breadcrumbs={[{ title: "Document Requests", href: "/documentrequests" }]}>
       <Head title="Document Requests" />
 
-      {/* Green header */}
+      {/* Header */}
       <div className="flex justify-between items-center mb-8 bg-green-600 text-white shadow-lg p-6">
         <h1 className="text-3xl font-bold">Document Requests</h1>
         <Button onClick={() => setShowModal(true)}>+ Request Document</Button>
       </div>
 
+      {/* Search */}
       <div className="p-6 space-y-6">
-        {/* Search */}
-        <div className="flex justify-between items-center mb-4">
-          <Input
-            placeholder="Search by resident name..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="max-w-sm"
-          />
-        </div>
+        <Input
+          placeholder="Search by resident name..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="max-w-sm mb-4"
+        />
 
-        {/* Table */}
+        {/* Requests Table */}
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -127,24 +172,17 @@ export default function DocumentRequests() {
                 filteredRequests.map(req => (
                   <TableRow key={req.id}>
                     <TableCell>{req.resident.first_name} {req.resident.last_name}</TableCell>
-                    <TableCell>{req.document_type}</TableCell>
+                    <TableCell>{req.document_type?.name}</TableCell>
                     <TableCell>{req.purpose}</TableCell>
-                    <TableCell>{req.payments?.[0]?.payment_method || "N/A"}</TableCell>
-                    <TableCell>{req.payments?.[0]?.amount || "0.00"}</TableCell>
-                    <TableCell className="capitalize">{req.status}</TableCell>
+                    <TableCell>{req.payments?.[0]?.payment_method ?? "N/A"}</TableCell>
+                    <TableCell>{formatCurrency(req.payments?.[0]?.amount ?? req.document_type?.amount)}</TableCell>
+                    <TableCell className="capitalize font-semibold">{req.status}</TableCell>
                     <TableCell>
-                      {req.status === "pending" && (
-                        <Button size="sm" onClick={() => handleAccept(req)}>Accept</Button>
-                      )}
-                      {req.status === "on process" && (
-                        <span className="text-gray-500 font-semibold">Accepted</span>
-                      )}
-                      {req.status === "ready for pick-up" && (
-                        <span className="text-blue-600 font-semibold">Ready for Pick-up</span>
-                      )}
-                      {req.status === "released" && (
-                        <span className="text-green-600 font-semibold">Released</span>
-                      )}
+                      {req.status === "pending" && <Button size="sm" onClick={() => handleAccept(req)}>Accept</Button>}
+                      {req.status === "on process" && <span className="text-gray-500 font-semibold">Accepted</span>}
+                      {req.status === "ready for pick-up" && <span className="text-blue-600 font-semibold">Ready</span>}
+                      {req.status === "released" && <span className="text-green-600 font-semibold">Released</span>}
+                      {req.status === "declined" && <span className="text-red-600 font-semibold">Declined</span>}
                     </TableCell>
                   </TableRow>
                 ))
@@ -163,11 +201,12 @@ export default function DocumentRequests() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
             <h2 className="text-lg font-semibold mb-4">Request Document</h2>
             <form onSubmit={handleSubmit} className="space-y-3">
+              {/* Resident */}
               <div>
-                <label className="block text-sm font-medium">Full Name</label>
+                <label className="block text-sm font-medium">Resident</label>
                 <select
                   className="w-full border rounded p-2"
                   value={form.resident_id}
@@ -175,26 +214,25 @@ export default function DocumentRequests() {
                   required
                 >
                   <option value="">Select Resident</option>
-                  {residents.map(r => (
-                    <option key={r.id} value={r.id}>
-                      {r.first_name} {r.last_name}
-                    </option>
-                  ))}
+                  {residents.map(r => <option key={r.id} value={r.id}>{r.first_name} {r.last_name}</option>)}
                 </select>
               </div>
 
+              {/* Document Type */}
               <div>
                 <label className="block text-sm font-medium">Document Type</label>
                 <select
                   className="w-full border rounded p-2"
-                  value={form.document_type}
-                  onChange={e => setForm({ ...form, document_type: e.target.value })}
+                  value={form.document_type_id}
+                  onChange={e => setForm({ ...form, document_type_id: Number(e.target.value) })}
+                  required
                 >
-                  <option>Barangay Clearance</option>
-                  <option>Certificate of Indigenous</option>
+                  <option value={0}>Select Document Type</option>
+                  {documentTypes.map(dt => <option key={dt.id} value={dt.id}>{dt.name}</option>)}
                 </select>
               </div>
 
+              {/* Purpose */}
               <div>
                 <label className="block text-sm font-medium">Purpose</label>
                 <input
@@ -206,33 +244,48 @@ export default function DocumentRequests() {
                 />
               </div>
 
+              {/* Payment Method */}
               <div>
                 <label className="block text-sm font-medium">Payment Method</label>
                 <select
                   className="w-full border rounded p-2"
                   value={form.payment_method}
-                  onChange={e => setForm({ ...form, payment_method: e.target.value })}
+                  onChange={e => setForm({ ...form, payment_method: e.target.value as "cash" | "gcash" | "free" })}
                 >
-                  <option>Cash</option>
-                  <option>Gcash</option>
-                  <option>Free</option>
+                  <option value="cash">Cash</option>
+                  <option value="gcash">Gcash</option>
+                  <option value="free">Free</option>
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium">Amount</label>
-                <input
-                  type="number"
-                  className="w-full border rounded p-2"
-                  value={form.amount}
-                  onChange={e => setForm({ ...form, amount: e.target.value })}
-                />
-              </div>
+              {/* Amount */}
+              {form.payment_method !== "free" && (
+                <div>
+                  <label className="block text-sm font-medium">Amount</label>
+                  <input type="text" className="w-full border rounded p-2 bg-gray-100" value={formatCurrency(form.amount)} readOnly />
+                </div>
+              )}
 
+              {/* GCash Reference Number */}
+              {form.payment_method === "gcash" && (
+                <div>
+                  <label className="block text-sm font-medium">GCash Reference Number</label>
+                  <input
+                    type="text"
+                    className="w-full border rounded p-2"
+                    value={form.reference_number}
+                    onChange={e => setForm({ ...form, reference_number: e.target.value })}
+                    required
+                  />
+                  <div className="mt-2">
+                    <img src="/images/gcash.jpg" alt="GCash QR" className="w-32 h-32 mx-auto" />
+                  </div>
+                </div>
+              )}
+
+              {/* Modal Actions */}
               <div className="flex justify-end space-x-2 pt-2">
-                <Button type="button" variant="outline" onClick={() => setShowModal(false)}>
-                  Cancel
-                </Button>
+                <Button type="button" variant="outline" onClick={() => setShowModal(false)}>Cancel</Button>
                 <Button type="submit">Submit</Button>
               </div>
             </form>

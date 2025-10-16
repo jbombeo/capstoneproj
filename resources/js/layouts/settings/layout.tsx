@@ -8,6 +8,7 @@ import { edit } from '@/routes/profile';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
+// import { services } from '@/routes';
 
 const sidebarNavItems: NavItem[] = [
     {
@@ -25,6 +26,17 @@ const sidebarNavItems: NavItem[] = [
         href: appearance(),
         icon: null,
     },
+
+        {
+        title: 'Services',
+        href: '/services',
+        icon: null,
+    },
+    //     {
+    //     title: 'Services',
+    //     href: services(),
+    //     icon: null,
+    // },
 ];
 
 export default function SettingsLayout({ children }: PropsWithChildren) {

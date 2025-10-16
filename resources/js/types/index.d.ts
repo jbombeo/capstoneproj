@@ -1,5 +1,14 @@
 import { InertiaLinkProps } from '@inertiajs/react';
 import { LucideIcon } from 'lucide-react';
+import type { ComponentType } from "react";
+
+export interface NavItem {
+  title: string;
+  href?: string;
+  icon?: ComponentType<any>;
+  isDropdown?: boolean;  // ✅ optional flag to mark dropdowns
+  children?: NavItem[];  // ✅ allows nested dropdown submenus
+}
 
 export interface Auth {
     user: User;
@@ -16,10 +25,10 @@ export interface NavGroup {
 }
 
 export interface NavItem {
-    title: string;
-    href: NonNullable<InertiaLinkProps['href']>;
-    icon?: LucideIcon | null;
-    isActive?: boolean;
+  title: string;
+  href: NonNullable<InertiaLinkProps['href']>;
+  icon?: LucideIcon | null;
+  isActive?: boolean;
 }
 
 export interface SharedData {
