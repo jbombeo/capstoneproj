@@ -2,11 +2,9 @@
 /bootstrap/ssr
 /node_modules
 /public/hot
-/public/storage
 /resources/js/actions
 /resources/js/routes
 /resources/js/wayfinder
-/storage/*.key
 /storage/pail
 /vendor
 .env
