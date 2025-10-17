@@ -17,7 +17,7 @@ class ResidentUserController extends Controller
             ->orderBy('dateofactivity', 'desc')
             ->get();
 
-        return Inertia::render('resident/dashboard', [
+        return Inertia::render('resident/home', [
             'activities' => $activities,
         ]);
     }

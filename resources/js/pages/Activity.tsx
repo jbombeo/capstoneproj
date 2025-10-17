@@ -185,20 +185,21 @@ export default function ActivityPage({ activities }: Props) {
                 <div>
                   <h2 className="text-lg font-semibold">{act.activity}</h2>
                   <p className="text-sm text-gray-600">{act.dateofactivity}</p>
-                  <p>{act.description}</p>
+                  {/* ✅ Display description with preserved line breaks */}
+                  <p className="whitespace-pre-line text-gray-700">{act.description}</p>
                 </div>
 
                 {/* Photos */}
                 <div className="flex gap-2 flex-wrap">
                   {act.activity_photos.length > 0 ? (
                     act.activity_photos.map((photo) => (
-<img
-  key={photo.id}
-  src={photo.url}
-  alt="Activity"
-  className="w-24 h-24 object-cover rounded"
-  crossOrigin="use-credentials" // sends cookies if needed
-/>
+                      <img
+                        key={photo.id}
+                        src={photo.url}
+                        alt="Activity"
+                        className="w-24 h-24 object-cover rounded"
+                        crossOrigin="use-credentials"
+                      />
                     ))
                   ) : (
                     <div className="w-24 h-24 bg-gray-200 flex items-center justify-center rounded">

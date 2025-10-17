@@ -11,73 +11,61 @@ use Inertia\Inertia;
 
 class ActivityController extends Controller
 {
-    // --- Display all activities ---
+    // --- Display all activities with their photos ---
     public function index()
     {
-        // Each photo now automatically includes its "url" attribute from the model
-        $activities = Activity::with('activity_photos')->get();
+        $activities = Activity::with('activity_photos')
+            ->orderBy('dateofactivity', 'asc')
+            ->get();
 
-        return inertia('Activity', compact('activities'));
+        return Inertia::render('Activity', compact('activities'));
     }
 
-    // --- Store new activity ---
+    // --- Store a new activity with optional photos ---
     public function store(Request $request)
     {
         $request->validate([
             'dateofactivity' => 'required|date',
             'activity' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'photos.*' => 'nullable|image|max:2048',
+            'photos.*' => 'nullable|image|max:5120', // 5MB max
         ]);
 
-        // Create new activity record
         $activity = Activity::create([
             'dateofactivity' => $request->dateofactivity,
             'activity' => $request->activity,
             'description' => $request->description,
         ]);
 
-        // Store uploaded photos
-        if ($request->hasFile('photos')) {
-            foreach ($request->file('photos') as $photo) {
-                $filename = Str::uuid() . '.' . $photo->getClientOriginalExtension();
-                $photo->storeAs('public/activity_photos', $filename);
-
-                ActivityPhoto::create([
-                    'activity_id' => $activity->id,
-                    'filename' => 'activity_photos/' . $filename,
-                ]);
-            }
-        }
+        $this->storePhotos($request, $activity);
 
         return redirect()->back()->with('success', 'Activity added successfully!');
     }
 
-    // --- Show single activity (optional) ---
+    // --- Show a single activity (optional for detail page) ---
     public function show(Activity $activity)
     {
         $activity->load('activity_photos');
 
-        return Inertia::render('ActivityShow', [
-            'activity' => $activity,
-        ]);
+        return Inertia::render('ActivityShow', compact('activity'));
     }
 
-    // --- Edit form (optional if using modal edit in React) ---
+    // --- Edit activity (for Inertia form) ---
     public function edit(Activity $activity)
     {
         $activity->load('activity_photos');
+
         return Inertia::render('ActivityEdit', compact('activity'));
     }
 
-    // --- Update existing activity ---
+    // --- Update activity and handle new photo uploads ---
     public function update(Request $request, Activity $activity)
     {
         $request->validate([
             'dateofactivity' => 'required|date',
             'activity' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'photos.*' => 'nullable|image|max:2048',
+            'photos.*' => 'nullable|image|max:5120',
         ]);
 
         $activity->update([
@@ -86,18 +74,7 @@ class ActivityController extends Controller
             'description' => $request->description,
         ]);
 
-        // Handle new photos if uploaded
-        if ($request->hasFile('photos')) {
-            foreach ($request->file('photos') as $photo) {
-                $filename = Str::uuid() . '.' . $photo->getClientOriginalExtension();
-                $photo->storeAs('public/activity_photos', $filename);
-
-                ActivityPhoto::create([
-                    'activity_id' => $activity->id,
-                    'filename' => 'activity_photos/' . $filename,
-                ]);
-            }
-        }
+        $this->storePhotos($request, $activity);
 
         return redirect()->route('activities.index')->with('success', 'Activity updated successfully!');
     }
@@ -106,16 +83,30 @@ class ActivityController extends Controller
     public function destroy(Activity $activity)
     {
         foreach ($activity->activity_photos as $photo) {
-            // Delete physical file if it exists
             if (Storage::exists('public/' . $photo->filename)) {
                 Storage::delete('public/' . $photo->filename);
             }
-
             $photo->delete();
         }
 
         $activity->delete();
 
         return redirect()->route('activities.index')->with('success', 'Activity deleted successfully!');
+    }
+
+    // --- Private helper to store uploaded photos ---
+    private function storePhotos(Request $request, Activity $activity)
+    {
+        if (!$request->hasFile('photos')) return;
+
+        foreach ($request->file('photos') as $photo) {
+            $filename = Str::uuid() . '.' . $photo->getClientOriginalExtension();
+            $photo->storeAs('public/activity_photos', $filename);
+
+            ActivityPhoto::create([
+                'activity_id' => $activity->id,
+                'filename' => 'activity_photos/' . $filename,
+            ]);
+        }
     }
 }

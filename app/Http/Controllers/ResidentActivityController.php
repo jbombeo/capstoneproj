@@ -18,7 +18,7 @@ class ResidentActivityController extends Controller
             ->orderBy('dateofactivity', 'desc')
             ->get();
 
-        return Inertia::render('Resident/ActivitiesDashboard', [
+        return Inertia::render('resident/home', [
             'activities' => $activities,
         ]);
     }
@@ -26,12 +26,12 @@ class ResidentActivityController extends Controller
     /**
      * Show a single activity (optional if you want a detail page)
      */
-    public function show($id)
-    {
-        $activity = Activity::with('activity_photos')->findOrFail($id);
+    // public function show($id)
+    // {
+    //     $activity = Activity::with('activity_photos')->findOrFail($id);
 
-        return Inertia::render('Resident/ActivityDetail', [
-            'activity' => $activity,
-        ]);
-    }
+    //     return Inertia::render('Resident/ActivityDetail', [
+    //         'activity' => $activity,
+    //     ]);
+    // }
 }

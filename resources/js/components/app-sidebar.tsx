@@ -65,19 +65,18 @@ items: [{ title: "Dashboard", href: dashboard().url, icon: Home }],
   {
     label: "Sanguniang Kabataan",
     items: [
-      { title: "Request Document", href: "/documentrequests", icon: Folder },
-      {
-        title: "Certificates",
-        icon: FileText,
-        isDropdown: true,
-        children: [
-          { title: "Barangay Clearance", href: "/barangay-clearances" },
-          { title: "Certificate of Indigency", href: "/certificate-indigency" },
-          { title: "Certificate of Good Moral", href: "/certificate-goodmoral" },
-          { title: "Certificate of Residency", href: "/certificate-residency" },
-        ],
-      },
-      { title: "Blotter Records", href: "/blotters", icon: ClipboardList },
+      { title: "Scholar", href: "/documentrequests", icon: Folder },
+      // {
+      //   title: "Certificates",
+      //   icon: FileText,
+      //   isDropdown: true,
+      //   children: [
+      //     { title: "Barangay Clearance", href: "/barangay-clearances" },
+      //     { title: "Certificate of Indigency", href: "/certificate-indigency" },
+      //     { title: "Certificate of Good Moral", href: "/certificate-goodmoral" },
+      //     { title: "Certificate of Residency", href: "/certificate-residency" },
+      //   ],
+      // },
     ],
   },
   

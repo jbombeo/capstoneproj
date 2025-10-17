@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Head, Link } from "@inertiajs/react";
-import { Home, User, ShieldCheck, BookOpen, Settings, Menu, X, FileText, LogOut } from "lucide-react";
+import { Head, Link, useForm } from "@inertiajs/react";
+import { Home, User, ShieldCheck, FileText, Settings, Menu, X, LogOut } from "lucide-react";
 
 interface Official {
   id: number;
@@ -16,17 +16,17 @@ interface Official {
 
 export default function OfficialProfile({ officials }: { officials: Official[] }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { post } = useForm(); // ✅ added post function
 
   const menu = [
     { name: "Home", icon: Home, href: "/resident/home" },
     { name: "Profile", icon: User, href: "/resident/profile" },
     { name: "Barangay Official", icon: ShieldCheck, href: "/resident/officials" },
     { name: "Request Document", icon: FileText, href: "/resident/document-requests" },
-    { name: "Blotter", icon: BookOpen, href: "/resident/blotter" },
     { name: "Settings", icon: Settings, href: "/resident/settings" },
   ];
 
-  const handleLogout = () => console.log("/logout");
+  const handleLogout = () => post("/logout");
 
   const getStatusClasses = (status: string) => {
     switch (status.toLowerCase()) {
@@ -54,7 +54,6 @@ export default function OfficialProfile({ officials }: { officials: Official[] }
     <>
       <Head title="Barangay Officials" />
       <div className="min-h-screen flex bg-gray-100">
-
         {/* Sidebar */}
         <aside
           className={`fixed inset-0 z-40 lg:static lg:w-80 bg-gradient-to-b from-blue-900 to-blue-800 shadow-2xl flex flex-col transition-transform duration-300 overflow-y-auto ${

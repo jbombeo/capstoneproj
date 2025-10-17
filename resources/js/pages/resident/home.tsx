@@ -1,18 +1,18 @@
 import React, { useState } from "react";
 import { Head, Link, useForm } from "@inertiajs/react";
-import { motion } from "framer-motion";
 import {
   Home,
   User,
   ShieldCheck,
-  BookOpen,
+  Menu,
+  X,
   LogOut,
   Settings,
   Calendar,
   Megaphone,
   Trophy,
-  Heart,
-  X,
+  Heart as HeartIcon,
+  FileText,
 } from "lucide-react";
 
 interface ActivityPhoto {
@@ -26,26 +26,33 @@ interface Activity {
   activity: string;
   description: string;
   dateofactivity: string;
-  activity_photos: ActivityPhoto[];
+  photos?: ActivityPhoto[];
 }
 
-interface Props {
-  activities: Activity[];
-}
+const ScalesIcon = ({ className = "w-6 h-6" }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="12" y1="3" x2="12" y2="21" />
+    <path d="M8 6H4l-2 6 2 3h4l-2-3z" />
+    <path d="M20 6h-4l2 6-2 3h4l2-3z" />
+    <circle cx="12" cy="3" r="1" />
+  </svg>
+);
 
-const getActivityIcon = (title: string) => {
-  const lower = title.toLowerCase();
-  if (lower.includes("patrol") || lower.includes("training")) return Calendar;
-  if (lower.includes("meeting") || lower.includes("community")) return Megaphone;
-  if (lower.includes("sports") || lower.includes("fest")) return Trophy;
-  if (lower.includes("health") || lower.includes("seminar")) return Heart;
-  return Calendar;
-};
-
-export default function NeonActivitiesDashboard({ activities }: Props) {
+export default function ResidentHome({ activities = [] }: { activities?: Activity[] }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
   const { post } = useForm();
+
+  const [likes, setLikes] = useState<Record<number, number>>({});
+  const [doubleClickHeart, setDoubleClickHeart] = useState<Record<number, boolean>>({});
 
   const handleLogout = () => post("/logout");
 
@@ -53,18 +60,42 @@ export default function NeonActivitiesDashboard({ activities }: Props) {
     { name: "Home", icon: Home, href: "/resident/home" },
     { name: "Profile", icon: User, href: "/resident/profile" },
     { name: "Barangay Official", icon: ShieldCheck, href: "/resident/officials" },
-    { name: "Request Document", icon: BookOpen, href: "/resident/document-requests" },
+    { name: "Request Document", icon: FileText, href: "/resident/document-requests" },
+    { name: "Settings", icon: Settings, href: "/resident/settings" },
   ];
 
+  const getActivityIcon = (title: string) => {
+    const lowerTitle = title.toLowerCase();
+    if (lowerTitle.includes("patrol") || lowerTitle.includes("training")) return Calendar;
+    if (lowerTitle.includes("meeting") || lowerTitle.includes("community")) return Megaphone;
+    if (lowerTitle.includes("sports") || lowerTitle.includes("fest")) return Trophy;
+    if (lowerTitle.includes("health") || lowerTitle.includes("seminar")) return HeartIcon;
+    return Calendar;
+  };
+
   const today = new Date().toISOString().split("T")[0];
-  const upcoming = activities.filter(a => a.dateofactivity >= today);
-  const past = activities.filter(a => a.dateofactivity < today);
-  const displayActivities = tab === "upcoming" ? upcoming : past;
+  const upcomingActivities = activities.filter((a) => a.dateofactivity >= today);
+  const pastActivities = activities.filter((a) => a.dateofactivity < today);
+  const displayActivities = tab === "upcoming" ? upcomingActivities : pastActivities;
+
+  const handleLike = (activityId: number) => {
+    // Update like count locally
+    setLikes((prev) => ({ ...prev, [activityId]: (prev[activityId] ?? 0) + 1 }));
+
+    // Show heart animation
+    setDoubleClickHeart((prev) => ({ ...prev, [activityId]: true }));
+    setTimeout(() => {
+      setDoubleClickHeart((prev) => ({ ...prev, [activityId]: false }));
+    }, 800);
+
+    // Optional: post to backend
+    post(`/activities/${activityId}/like`);
+  };
 
   return (
     <>
-      <Head title="Barangay Activities" />
-      <div className="min-h-screen flex bg-gray-900 text-white">
+      <Head title="Resident Home" />
+      <div className="min-h-screen flex bg-gray-100">
         {/* Sidebar */}
         <aside
           className={`fixed inset-0 z-40 lg:static lg:w-80 bg-gradient-to-b from-blue-900 to-blue-800 shadow-2xl flex flex-col transition-transform duration-300 ${
@@ -73,43 +104,38 @@ export default function NeonActivitiesDashboard({ activities }: Props) {
         >
           <div className="p-8 border-b border-blue-700 flex flex-col items-center justify-center relative">
             <button
-              className="lg:hidden absolute top-6 right-6"
+              className="lg:hidden absolute top-6 right-6 text-white"
               onClick={() => setSidebarOpen(false)}
             >
               <X className="w-6 h-6" />
             </button>
-            <img
-              src="/images/logo.png"
-              alt="Logo"
-              className="w-20 h-20 object-contain rounded-full mb-3"
-            />
-            <h1 className="text-2xl font-bold text-center">Barangay Portal</h1>
+            <div className="w-20 h-20 mb-3 flex items-center justify-center">
+              <img
+                src="/images/logo.png"
+                alt="Barangay Logo"
+                className="w-90 h-90 object-contain rounded-full"
+              />
+            </div>
+            <h1 className="text-2xl font-bold text-white text-center">Barangay Portal</h1>
           </div>
 
           <nav className="flex-1 p-6 space-y-1">
-            {menu.map(item => (
+            {menu.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                className="flex items-center p-4 rounded-lg hover:bg-green-700/50 transition group"
+                className="flex items-center p-4 rounded-lg hover:bg-green-700/50 text-white transition group"
               >
-                <item.icon className="w-5 h-5 mr-4 group-hover:scale-110 transition-transform" />
+                <item.icon className="w-5 h-5 mr-4 text-white group-hover:scale-110 transition-transform" />
                 <span className="font-medium">{item.name}</span>
               </Link>
             ))}
-            <Link
-              href="/resident/settings"
-              className="flex items-center p-4 rounded-lg hover:bg-green-700/50 transition group"
-            >
-              <Settings className="w-5 h-5 mr-4 group-hover:scale-110 transition-transform" />
-              <span className="font-medium">Settings</span>
-            </Link>
           </nav>
 
           <div className="p-6 border-t border-blue-700">
             <button
               onClick={handleLogout}
-              className="w-full flex items-center justify-center p-4 rounded-lg bg-blue-700/50 hover:bg-red-600 transition group"
+              className="w-full flex items-center justify-center p-4 rounded-lg bg-blue-700/50 hover:bg-red-600 text-white transition group"
             >
               <LogOut className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" />
               <span className="font-medium">Logout</span>
@@ -125,94 +151,137 @@ export default function NeonActivitiesDashboard({ activities }: Props) {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 min-h-screen p-6 lg:p-10">
-          <header className="text-center mb-8">
-            <h2 className="text-4xl font-bold text-pink-500 mb-2 neon-text">
-              Barangay Activities
-            </h2>
-            <p className="text-pink-300">Check the latest events in your barangay</p>
-          </header>
-
-          {/* Tabs */}
-          <div className="flex justify-center mb-8">
-            {["upcoming", "past"].map(t => (
+        <main className="flex-1 min-h-screen">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-blue-500 p-8 lg:p-12 text-white shadow-lg">
+            <div className="max-w-7xl mx-auto flex justify-between items-start">
+              <div className="flex items-center gap-6">
+                <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-full border-4 border-white/30 flex items-center justify-center bg-white/10">
+                  <ScalesIcon className="w-8 h-8 lg:w-10 lg:h-10 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-3xl lg:text-4xl font-bold">Welcome to the</h2>
+                  <h2 className="text-3xl lg:text-4xl font-bold">Barangay Portal</h2>
+                  <p className="mt-3 text-blue-100 text-lg">
+                    Check the latest activities and events in your barangay
+                  </p>
+                </div>
+              </div>
               <button
-                key={t}
-                className={`px-6 py-2 rounded-lg font-semibold mx-2 transition ${
-                  tab === t
-                    ? "bg-pink-500 text-white shadow-md"
-                    : "bg-gray-800 text-gray-300 hover:text-white"
-                }`}
-                onClick={() => setTab(t as "upcoming" | "past")}
+                className="lg:hidden text-white bg-blue-700/50 p-2 rounded-lg"
+                onClick={() => setSidebarOpen(true)}
               >
-                {t.charAt(0).toUpperCase() + t.slice(1)}
+                <Menu className="w-7 h-7" />
               </button>
-            ))}
+            </div>
           </div>
 
-          {/* Activities Grid */}
-          {displayActivities.length === 0 ? (
-            <div className="text-center py-16 text-gray-400">
-              <Calendar className="w-16 h-16 mx-auto mb-4" />
-              No {tab} activities available.
+          {/* Tabs */}
+          <div className="max-w-7xl mx-auto p-6 lg:p-10">
+            <div className="mb-8">
+              <div className="inline-flex bg-gray-200 rounded-xl p-1 shadow-sm">
+                <button
+                  className={`px-8 py-3 rounded-lg font-semibold transition-all ${
+                    tab === "upcoming"
+                      ? "bg-blue-600 text-white shadow-md"
+                      : "bg-transparent text-gray-700 hover:text-gray-900"
+                  }`}
+                  onClick={() => setTab("upcoming")}
+                >
+                  Upcoming
+                </button>
+                <button
+                  className={`px-8 py-3 rounded-lg font-semibold transition-all ${
+                    tab === "past"
+                      ? "bg-blue-600 text-white shadow-md"
+                      : "bg-transparent text-gray-700 hover:text-gray-900"
+                  }`}
+                  onClick={() => setTab("past")}
+                >
+                  Past
+                </button>
+              </div>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {displayActivities.map(act => {
-                const Icon = getActivityIcon(act.activity);
-                return (
-                  <motion.div
-                    key={act.id}
-                    className="relative bg-gray-800 rounded-3xl overflow-hidden shadow-lg cursor-pointer group"
-                    initial={{ opacity: 0, y: 50 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: 0.3 }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
-                    whileHover={{
-                      scale: 1.03,
-                      boxShadow:
-                        "0 0 20px #ff0080, 0 0 40px #ff00ff, 0 0 60px #ff0080",
-                      transition: { duration: 0.3 },
-                    }}
-                  >
-                    {act.activity_photos[0] && (
-                      <img
-                        src={act.activity_photos[0].url}
-                        alt={act.activity}
-                        className="w-full h-48 object-cover rounded-t-3xl"
-                      />
-                    )}
 
-                    <div className="p-6 flex flex-col gap-3 relative z-10">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-pink-500 flex items-center justify-center">
-                          <Icon className="w-6 h-6 text-white" />
+            {/* Activities as Modern Posts */}
+            <section className="space-y-6">
+              {displayActivities.length === 0 ? (
+                <div className="text-center py-16">
+                  <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 text-lg">No {tab} activities or events available.</p>
+                </div>
+              ) : (
+                displayActivities.map((activity) => {
+                  const IconComponent = getActivityIcon(activity.activity);
+                  const likeCount = likes[activity.id] ?? 0;
+                  const showHeart = doubleClickHeart[activity.id] ?? false;
+
+                  return (
+                    <div
+                      key={activity.id}
+                      className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden"
+                    >
+                      {/* Header */}
+                      <div className="flex items-center p-4 border-b border-gray-100">
+                        <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center">
+                          <IconComponent className="w-6 h-6 text-white" />
                         </div>
-                        <h3 className="text-xl font-bold text-white">{act.activity}</h3>
-                      </div>
-                      <p className="text-gray-300">{act.description}</p>
-                      <div className="text-sm text-gray-400">
-                        {new Date(act.dateofactivity).toLocaleDateString()}
+                        <div className="ml-4 flex-1">
+                          <h3 className="text-lg font-bold text-gray-900">{activity.activity}</h3>
+                          <p className="text-sm text-gray-500">{activity.dateofactivity}</p>
+                        </div>
                       </div>
 
-                      {act.activity_photos.length > 1 && (
-                        <div className="grid grid-cols-2 gap-2 mt-3">
-                          {act.activity_photos.slice(1).map(photo => (
-                            <img
+                      {/* Description */}
+                      <div className="px-4 py-3 text-gray-700 text-sm whitespace-pre-line">
+                        {activity.description}
+                      </div>
+
+                      {/* Photos with double-click like */}
+                      {activity.photos && activity.photos.length > 0 && (
+                        <div className="relative p-4 flex flex-wrap gap-2">
+                          {activity.photos.map((photo) => (
+                            <div
                               key={photo.id}
-                              src={photo.url}
-                              alt={act.activity}
-                              className="w-full h-24 object-cover rounded"
-                            />
+                              className="relative w-full sm:w-1/2 md:w-1/3 lg:w-1/4 h-48 overflow-hidden rounded-lg"
+                            >
+                              <img
+                                src={photo.url}
+                                alt="Activity"
+                                className="w-full h-full object-cover cursor-pointer"
+                                onDoubleClick={() => handleLike(activity.id)}
+                              />
+
+                              {/* Heart animation */}
+                              {showHeart && (
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                  <HeartIcon className="w-16 h-16 text-white drop-shadow-lg animate-ping" />
+                                </div>
+                              )}
+                            </div>
                           ))}
                         </div>
                       )}
+
+                      {/* Actions */}
+                      <div className="flex items-center justify-between px-4 py-2 border-t border-gray-100">
+                        <div className="flex items-center space-x-4 text-gray-500">
+                          {/* <button
+                            className="flex items-center gap-1 hover:text-blue-600 transition-colors"
+                            onClick={() => handleLike(activity.id)}
+                          >
+                            <HeartIcon className="w-5 h-5" />
+                            <span>{likeCount} Like{likeCount !== 1 ? "s" : ""}</span>
+                          </button> */}
+                        </div>
+                        <div className="text-gray-400 text-sm">Barangay Portal</div>
+                      </div>
                     </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })
+              )}
+            </section>
+          </div>
         </main>
       </div>
     </>

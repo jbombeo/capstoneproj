@@ -1,6 +1,7 @@
 <?php
 
 use Tighten\Ziggy\Ziggy;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ResidentActivityController;
 use App\Http\Controllers\ScholarshipController;
 use App\Http\Controllers\LogController;
@@ -44,7 +45,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('youth.dashboard')
         ->middleware('role:youth');
 
-    Route::get('resident-dashboard', fn() => Inertia::render('resident/dashboard'))
+    Route::get('resident-dashboard', fn() => Inertia::render('resident/home'))
         ->name('resident.home')
         ->middleware('role:resident');
 
@@ -65,7 +66,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/{resident}/reject', [ResidentController::class, 'reject'])->name('residentregistereds.reject');
         Route::get('/{resident}', [ResidentController::class, 'show'])->name('residentregistereds.show');
     });
-
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     // ---------------- DOCUMENT REQUESTS (ADMIN) ----------------
     Route::prefix('documentrequests')->group(function () {
         Route::get('/', [DocumentRequestController::class, 'index'])->name('document-requests.index');
@@ -158,16 +159,21 @@ Route::middleware(['auth', 'role:resident'])
         Route::get('/activities/{id}', [ResidentActivityController::class, 'show'])
             ->name('activities.show');
 
+
+        Route::get('settings', [ResidentSettingsController::class, 'index'])
+            ->name('resident.settings.index');
+        Route::put('settings', [ResidentSettingsController::class, 'update'])
+            ->name('resident.settings.update');
         // Sub-pages
         Route::get('/barangay-clearance', [ResidentUserController::class, 'barangayClearance'])->name('barangay.clearance');
         Route::get('/certificate-indigenous', [ResidentUserController::class, 'certificateIndigenous'])->name('certificate.indigenous');
     });
-        // ⚙️ Settings
-        Route::prefix('settings')->name('settings.')->group(function () {
-            Route::get('/', [ResidentSettingsController::class, 'index'])->name('index');
-            Route::get('/password', [ResidentSettingsController::class, 'password'])->name('password');
-            Route::put('/password', [ResidentSettingsController::class, 'update'])->name('password.update');
-        });
+    // ⚙️ Settings under /resident/settings
+    // Route::prefix('settings')->name('resident.settings.')->group(function () {
+    //     Route::get('/', [ResidentSettingsController::class, 'index'])->name('index');
+    //     Route::get('/password', [ResidentSettingsController::class, 'password'])->name('password');
+    //     Route::put('/password', [ResidentSettingsController::class, 'update'])->name('password.update');
+    // });
     });
 
 
