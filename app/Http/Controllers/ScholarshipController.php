@@ -4,68 +4,113 @@ namespace App\Http\Controllers;
 
 use App\Models\Scholarship;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class ScholarshipController extends Controller
 {
-    // List scholarships (renders scholarship.tsx)
-    public function index()
-    {
-        $scholarships = Scholarship::latest()->get();
+    /**
+     * Display a listing of scholarships.
+     */
+public function index(Request $request)
+{
+    $query = Scholarship::query()
+        ->withCount('applications')
+        ->with(['applications.youth' => function ($q) {
+            $q->select('id', 'first_name', 'last_name', 'email');
+        }])
+        ->latest();
 
-        return Inertia::render('sk/scholarship', [
-            'scholarships' => $scholarships,
-            'errors' => session('errors')
-        ]);
+    if ($search = $request->input('search')) {
+        $query->where('title', 'like', "%{$search}%");
     }
 
-    // Store a new scholarship
+    return Inertia::render('sk/scholarships', [
+        'scholarships' => $query->paginate(12)->withQueryString(),
+        'filters' => $request->only('search'),
+    ]);
+}
+
+    /**
+     * Store a newly created scholarship.
+     */
     public function store(Request $request)
     {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date',
-            'grant_amount' => 'nullable|numeric',
+        $data = $request->validate([
+            'title'        => 'required|string|max:255',
+            'description'  => 'nullable|string',
+            'budget'       => 'nullable|numeric|min:0',
+            'open_date'    => 'nullable|date',
+            'close_date'   => 'nullable|date|after_or_equal:open_date',
+            'image'        => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
         ]);
 
-        Scholarship::create([
-            'sk_official_id' => auth()->user()->skOfficial->id,
-            'title' => $request->title,
-            'description' => $request->description,
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
-            'grant_amount' => $request->grant_amount,
-        ]);
+        // Image upload
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('scholarships', 'public');
+            $data['image_path'] = $path;
+        }
 
-        return redirect()->route('scholarships.index')
-                         ->with('success', 'Scholarship created successfully.');
+        $data['created_by'] = auth()->id();
+
+        Scholarship::create($data);
+
+        return redirect()->route('sk.scholarships.index')
+            ->with('success', 'Scholarship created successfully.');
     }
 
-    // Update scholarship inline
+    /**
+     * Update an existing scholarship.
+     */
     public function update(Request $request, Scholarship $scholarship)
     {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date',
-            'grant_amount' => 'nullable|numeric',
+        $data = $request->validate([
+            'title'        => 'required|string|max:255',
+            'description'  => 'nullable|string',
+            'budget'       => 'nullable|numeric|min:0',
+            'open_date'    => 'nullable|date',
+            'close_date'   => 'nullable|date|after_or_equal:open_date',
+            'image'        => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
         ]);
 
-        $scholarship->update($request->only(['title', 'description', 'start_date', 'end_date', 'grant_amount']));
+        // Replace image if new image is sent
+        if ($request->hasFile('image')) {
+            if ($scholarship->image_path) {
+                Storage::disk('public')->delete($scholarship->image_path);
+            }
 
-        return redirect()->route('scholarships.index')
-                         ->with('success', 'Scholarship updated successfully.');
+            $path = $request->file('image')->store('scholarships', 'public');
+            $data['image_path'] = $path;
+        }
+
+        $scholarship->update($data);
+
+        return redirect()->route('sk.scholarships.index')
+            ->with('success', 'Scholarship updated successfully.');
     }
 
-    // Delete a scholarship
+    /**
+     * Soft delete a scholarship.
+     */
     public function destroy(Scholarship $scholarship)
     {
+        if ($scholarship->image_path) {
+            Storage::disk('public')->delete($scholarship->image_path);
+        }
+
         $scholarship->delete();
 
-        return redirect()->route('scholarships.index')
-                         ->with('success', 'Scholarship deleted successfully.');
+        return back()->with('success', 'Scholarship deleted successfully.');
+    }
+
+    /**
+     * Restore a soft-deleted scholarship.
+     */
+    public function restore($id)
+    {
+        $scholarship = Scholarship::onlyTrashed()->findOrFail($id);
+        $scholarship->restore();
+
+        return back()->with('success', 'Scholarship restored successfully.');
     }
 }

@@ -10,11 +10,29 @@ return new class extends Migration
     {
         Schema::create('scholarship_applications', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('scholarship_id')->constrained('scholarships')->onDelete('cascade');
-            $table->foreignId('youth_id')->constrained('youth')->onDelete('cascade');
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+
+            $table->foreignId('scholarship_id')
+                ->constrained('scholarships')
+                ->onDelete('cascade');
+
+            $table->foreignId('youth_id')
+                ->constrained('youth')
+                ->onDelete('cascade');
+
+            $table->enum('status', [
+                'pending',
+                'for interview',
+                'for requirement',
+                'granted',
+            ])->default('pending');
+
+            $table->date('interview_date')->nullable();
+            $table->time('interview_time')->nullable();
+
             $table->text('remarks')->nullable();
+
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

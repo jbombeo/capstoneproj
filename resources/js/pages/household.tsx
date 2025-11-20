@@ -1,24 +1,39 @@
 import { useState, useEffect } from "react";
-import { usePage, Head, router } from "@inertiajs/react";
+import { usePage, Head } from "@inertiajs/react";
+import { PageProps as InertiaPageProps } from "@inertiajs/core";
 import AppLayout from "@/layouts/app-layout";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { Users } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
-
 
 interface Zone {
   id: number;
   zone: string;
+}
+
+interface Member {
+  id: number;
+  first_name: string;
+  last_name: string;
+  relation: string;
+  gender: string;
+  age: number;
+  image?: string | null;
+}
+
+interface HeadResident {
+  id: number;
+  first_name: string;
+  last_name: string;
+  zone?: Zone;
+  image?: string | null;
 }
 
 interface Household {
@@ -26,56 +41,30 @@ interface Household {
   household_no: number;
   household_member: number;
   zone?: Zone;
-  headOfFamily: {
-    id: number;
-    first_name: string;
-    last_name: string;
-    zone?: Zone;
-  };
+  headOfFamily: HeadResident;
+  members: Member[];
 }
 
-interface ResidentHead {
-  id: number;
-  first_name: string;
-  last_name: string;
-  zone?: Zone;
-}
-
-interface HouseholdPageProps {
+interface HouseholdPageProps extends InertiaPageProps {
   households: Household[];
-  heads: ResidentHead[];
   errors: Record<string, string>;
   flash?: { success?: string; error?: string };
-  [key: string]: any;
 }
 
 export default function HouseholdPage() {
-  const { households, heads, errors, flash } =
-    usePage<HouseholdPageProps>().props;
+  const { households, errors, flash } = usePage<HouseholdPageProps>().props;
 
   const [search, setSearch] = useState("");
-  const [openAdd, setOpenAdd] = useState(false);
-  const [openEdit, setOpenEdit] = useState(false);
-  const [editingHousehold, setEditingHousehold] =
-    useState<Household | null>(null);
 
-  const [formData, setFormData] = useState({
-    household_no: "",
-    household_member: "1",
-    head_of_family: "",
-  });
-
+  const [openMembers, setOpenMembers] = useState(false);
+  const [selected, setSelected] = useState<Household | null>(null);
 
   useEffect(() => {
     if (errors && Object.keys(errors).length > 0) {
       Object.values(errors).forEach((msg) => toast.error(msg));
     }
-    if (flash?.success) {
-      toast.success(flash.success);
-    }
-    if (flash?.error) {
-      toast.error(flash.error);
-    }
+    if (flash?.success) toast.success(flash.success);
+    if (flash?.error) toast.error(flash.error);
   }, [errors, flash]);
 
   const filteredHouseholds = households.filter((h) =>
@@ -84,50 +73,13 @@ export default function HouseholdPage() {
       .includes(search.toLowerCase())
   );
 
-  const handleAddHousehold = () => {
-    router.post("/households", formData, {
-      onSuccess: () => {
-        setFormData({
-          household_no: "",
-          household_member: "1",
-          head_of_family: "",
-        });
-        setOpenAdd(false);
-      },
-    });
+  const openModal = (house: Household) => {
+    setSelected(house);
+    setOpenMembers(true);
   };
 
-  const handleEditHousehold = (house: Household) => {
-    setEditingHousehold(house);
-    setFormData({
-      household_no: String(house.household_no),
-      household_member: String(house.household_member),
-      head_of_family: String(house.headOfFamily?.id ?? ""),
-    });
-    setOpenEdit(true);
-  };
-
-  const handleUpdateHousehold = () => {
-    if (!editingHousehold) return;
-    router.put(
-      `/households/${editingHousehold.id}`,
-      {
-        household_no: formData.household_no,
-        household_member: formData.household_member,
-      },
-      {
-        onSuccess: () => {
-          setOpenEdit(false);
-          setEditingHousehold(null);
-        },
-      }
-    );
-  };
-
-  const handleDeleteHousehold = (id: number) => {
-    if (confirm("Are you sure you want to delete this household?")) {
-      router.delete(`/households/${id}`);
-    }
+  const imagePath = (img?: string | null) => {
+    return img ? `/storage/${img}` : "/images/default-avatar.png";
   };
 
   return (
@@ -135,103 +87,38 @@ export default function HouseholdPage() {
       <Head title="Households" />
       <Toaster position="top-right" />
 
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8 bg-green-600 text-white shadow-lg p-6">
-        <h1 className="text-3xl font-bold">Households List</h1>
+      {/* HEADER */}
+      <div className="mb-10 bg-gradient-to-r from-green-700 to-green-500 text-white p-8 rounded-xl shadow-xl">
+        <h1 className="text-4xl font-extrabold">Household Registry</h1>
+        <p className="opacity-90 text-sm">
+          Official Barangay Household Information Records
+        </p>
       </div>
 
       <div className="p-6 space-y-6">
-        {/* Search + Add */}
-        <div className="flex justify-between items-center mb-4">
+        {/* SEARCH */}
+        <div className="flex justify-between items-center mb-6 bg-white px-5 py-4 rounded-xl shadow border">
           <Input
             placeholder="Search by head of family..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="max-w-sm"
+            className="max-w-md"
           />
-
-          <Dialog open={openAdd} onOpenChange={setOpenAdd}>
-            <DialogTrigger asChild>
-              <Button className="bg-blue-600 text-white hover:bg-blue-700">
-                + Add Household
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Add New Household</DialogTitle>
-              </DialogHeader>
-
-              <div className="space-y-4 mt-2">
-                <div>
-                  <Label>Household No</Label>
-                  <Input
-                    value={formData.household_no}
-                    onChange={(e) =>
-                      setFormData({ ...formData, household_no: e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>Household Members</Label>
-                  <Input
-                    type="number"
-                    value={formData.household_member}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        household_member: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>Head of Family</Label>
-                  <select
-                    value={formData.head_of_family}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        head_of_family: e.target.value,
-                      })
-                    }
-                    className="w-full border rounded-md p-2"
-                  >
-                    <option value="">-- Select Head of Family --</option>
-                    {heads.map((head) => (
-                      <option key={head.id} value={head.id}>
-                        {head.last_name}, {head.first_name}{" "}
-                        {head.zone ? `(${head.zone.zone})` : ""}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <DialogFooter className="mt-4">
-                <Button
-                  className="w-full bg-blue-600 text-white hover:bg-blue-700"
-                  onClick={handleAddHousehold}
-                >
-                  Add Household
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         </div>
 
-        {/* Table */}
-        <Card className="shadow-md rounded-2xl overflow-x-auto">
-          <CardContent className="p-4">
-            <table className="w-full text-sm text-left border-collapse">
+        {/* TABLE */}
+        <Card className="shadow-xl rounded-2xl border">
+          <CardContent className="p-0">
+            <table className="w-full text-sm text-left table-fixed">
               <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
                 <tr>
-                  <th className="px-4 py-2">Household No</th>
-                  <th className="px-4 py-2">Members</th>
-                  <th className="px-4 py-2">Zone</th>
-                  <th className="px-4 py-2">Head of Family</th>
-                  <th className="px-4 py-2">Action</th>
+                  <th className="px-6 py-3 w-32">Household No</th>
+                  <th className="px-6 py-3 w-64">Head of Family</th>
+                  <th className="px-6 py-3 w-32 text-center">Members</th>
+                  <th className="px-6 py-3 w-24 text-center">Zone</th>
                 </tr>
               </thead>
+
               <tbody>
                 {filteredHouseholds.length > 0 ? (
                   filteredHouseholds.map((house) => (
@@ -239,38 +126,51 @@ export default function HouseholdPage() {
                       key={house.id}
                       className="border-b hover:bg-gray-50 transition"
                     >
-                      <td className="px-4 py-2">{house.household_no}</td>
-                      <td className="px-4 py-2">{house.household_member}</td>
-                      <td className="px-4 py-2">
-                        {house.zone?.zone ??
-                          house.headOfFamily?.zone?.zone ??
-                          ""}
+                      {/* Household No */}
+                      <td className="px-6 py-4 font-semibold text-green-800">
+                        <span className="bg-green-100 px-3 py-1 rounded-lg">
+                          {house.household_no}
+                        </span>
                       </td>
-                      <td className="px-4 py-2">
-                        {house.headOfFamily?.last_name},{" "}
-                        {house.headOfFamily?.first_name}
+
+                      {/* Head of Family */}
+                      <td className="px-6 py-4 font-semibold text-gray-900">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={imagePath(house.headOfFamily.image)}
+                            className="h-10 w-10 rounded-full object-cover border"
+                          />
+                          <div>
+                            {house.headOfFamily.last_name},{" "}
+                            {house.headOfFamily.first_name}
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-4 py-2 space-x-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEditHousehold(house)}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleDeleteHousehold(house.id)}
-                        >
-                          Delete
-                        </Button>
+
+                      {/* Members */}
+                      <td
+                        onClick={() => openModal(house)}
+                        className="px-6 py-4 text-blue-700 font-bold cursor-pointer"
+                      >
+                        <div className="flex justify-center items-center gap-2 hover:underline">
+                          <Users className="h-5 w-5 text-blue-700" />
+                          {house.household_member}
+                        </div>
+                      </td>
+
+                      {/* Zone */}
+                      <td className="px-6 py-4 text-center">
+                        <span className="bg-gray-200 px-3 py-1 rounded-lg text-gray-700 font-medium">
+                          {house.zone?.zone ??
+                            house.headOfFamily?.zone?.zone ??
+                            ""}
+                        </span>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="text-center py-4 text-gray-500">
+                    <td colSpan={5} className="text-center py-8 text-gray-500">
                       No households found
                     </td>
                   </tr>
@@ -281,47 +181,60 @@ export default function HouseholdPage() {
         </Card>
       </div>
 
-      {/* Edit Dialog */}
-      <Dialog open={openEdit} onOpenChange={setOpenEdit}>
-        <DialogContent className="sm:max-w-md">
+      {/* MEMBER MODAL */}
+      <Dialog open={openMembers} onOpenChange={setOpenMembers}>
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
-            <DialogTitle>Edit Household</DialogTitle>
+            <DialogTitle className="text-xl font-bold">
+              Family Composition
+            </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 mt-2">
-            <div>
-              <Label>Household No</Label>
-              <Input
-                value={formData.household_no}
-                onChange={(e) =>
-                  setFormData({ ...formData, household_no: e.target.value })
-                }
-              />
-            </div>
-            <div>
-              <Label>Members</Label>
-              <Input
-                type="number"
-                value={formData.household_member}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    household_member: e.target.value,
-                  })
-                }
-              />
-            </div>
-            {/* head_of_family not editable */}
-          </div>
+          {selected && (
+            <div className="space-y-6 mt-4">
+              {/* HEAD OF FAMILY */}
+              <div className="flex flex-col items-center">
+                <img
+                  src={imagePath(selected.headOfFamily.image)}
+                  className="w-24 h-24 rounded-full border object-cover shadow"
+                />
+                <p className="text-lg font-bold mt-2">
+                  {selected.headOfFamily.last_name},{" "}
+                  {selected.headOfFamily.first_name}
+                </p>
+                <p className="text-sm text-gray-600 font-medium">
+                  Head of Family
+                </p>
+              </div>
 
-          <DialogFooter className="mt-4">
-            <Button
-              className="w-full bg-blue-600 text-white hover:bg-blue-700"
-              onClick={handleUpdateHousehold}
-            >
-              Update Household
-            </Button>
-          </DialogFooter>
+              <div className="w-full border-t my-4"></div>
+
+              {/* MEMBERS LIST */}
+              <div className="grid grid-cols-2 gap-4">
+                {selected.members
+                  .filter((m) => m.relation !== "Head")
+                  .map((m) => (
+                    <div
+                      key={m.id}
+                      className="p-4 border rounded-xl bg-gray-50 shadow-sm flex flex-col items-center"
+                    >
+                      <img
+                        src={imagePath(m.image)}
+                        className="w-20 h-20 rounded-full object-cover border shadow"
+                      />
+
+                      <p className="mt-3 text-center font-bold text-gray-900">
+                        {m.last_name}, {m.first_name}
+                      </p>
+
+                      <p className="text-xs text-gray-500">{m.relation}</p>
+                      <p className="text-xs text-gray-500">{m.gender}</p>
+                      <p className="text-xs text-gray-500">{m.age} yrs old</p>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </AppLayout>

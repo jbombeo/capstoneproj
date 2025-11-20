@@ -3,23 +3,28 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Announcement extends Model
 {
-    use HasFactory;
+    use SoftDeletes;
 
     protected $fillable = [
-        'sk_official_id',
         'title',
         'content',
-        'image_path', 
-        'date_posted',
+        'image_path',
+        'created_by',
     ];
 
-    // Relationships
-    public function skOfficial()
+    protected $appends = ['image_url'];
+
+    public function creator()
     {
-        return $this->belongsTo(SKOfficial::class);
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        return $this->image_path ? asset('storage/' . $this->image_path) : null;
     }
 }

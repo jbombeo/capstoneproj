@@ -10,15 +10,29 @@ return new class extends Migration
     {
         Schema::create('youth', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->date('date_of_birth')->nullable();
-            $table->string('gender')->nullable();
-            $table->string('address')->nullable();
+            // Link to users table, nullable until approved
+            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('cascade');
+
+            // Resident-provided email
+            $table->string('email')->unique();
+            $table->string('last_name', 50);
+            $table->string('first_name', 50);
+            $table->string('middle_name', 50)->nullable();
+            $table->date('birth_date')->nullable();
+            $table->string('birth_place', 100)->nullable();
+            $table->integer('age');
+            $table->string('gender', 10);
             $table->string('contact_number')->nullable();
-            $table->text('skills')->nullable();
-            $table->text('interests')->nullable();
-            $table->enum('registration_status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->json('skills')->nullable(); // ["sports","music"]
+            // $table->boolean('is_approved')->default(false);
+            // Photo
+            $table->text('image')->nullable();
+
+            // Status: pending, approved, rejected
+            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

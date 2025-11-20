@@ -10,13 +10,18 @@ return new class extends Migration
     {
         Schema::create('scholarships', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('sk_official_id')->constrained('sk_officials')->onDelete('cascade');
             $table->string('title');
             $table->text('description')->nullable();
-            $table->date('start_date')->nullable();
-            $table->date('end_date')->nullable();
-            $table->decimal('grant_amount', 10, 2)->nullable();
+            $table->string('image_path')->nullable();
+
+            $table->decimal('budget', 12, 2)->nullable();
+            $table->date('open_date')->nullable();
+            $table->date('close_date')->nullable();
+
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

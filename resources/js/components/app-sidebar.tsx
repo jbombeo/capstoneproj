@@ -24,6 +24,7 @@ import {
   Activity,
   Settings,
   ChevronRight,
+  Inbox
 } from "lucide-react";
 import AppLogo from "./app-logo";
 
@@ -41,6 +42,7 @@ items: [{ title: "Dashboard", href: dashboard().url, icon: Home }],
       { title: "Residents Record", href: "/residentregistereds", icon: UserCheck },
       { title: "Household Record", href: "/households", icon: Users2 },
       { title: "Zone", href: "/zones", icon: MapPin },
+      { title: "Feedback", href: "/feedback", icon: Inbox },
     ],
   },
   {
@@ -57,6 +59,7 @@ items: [{ title: "Dashboard", href: dashboard().url, icon: Home }],
           { title: "Certificate of Indigency", href: "/certificate-indigency" },
           { title: "Certificate of Good Moral", href: "/certificate-goodmoral" },
           { title: "Certificate of Residency", href: "/certificate-residency" },
+
         ],
       },
       { title: "Blotter Records", href: "/blotters", icon: ClipboardList },
@@ -65,7 +68,7 @@ items: [{ title: "Dashboard", href: dashboard().url, icon: Home }],
   {
     label: "Sanguniang Kabataan",
     items: [
-      { title: "Scholar", href: "/documentrequests", icon: Folder },
+      { title: "Scholar", href: "/scholarships", icon: Folder },
       // {
       //   title: "Certificates",
       //   icon: FileText,
@@ -83,8 +86,9 @@ items: [{ title: "Dashboard", href: dashboard().url, icon: Home }],
   {
     label: "Finance & Services",
     items: [
-      { title: "Reports", href: "/brgyrevenue", icon: CreditCard },
+      { title: "Reports", href: "/report/revenues", icon: CreditCard },
       { title: "Settings", href: "/services", icon: Settings },
+      { title: "Hotline", href: "/hotlines", icon: ClipboardList },
     ],
   },
   {

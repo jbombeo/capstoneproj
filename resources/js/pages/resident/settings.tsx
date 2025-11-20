@@ -10,6 +10,8 @@ import {
   LogOut,
   Settings,
   Lock,
+  MessageSquare,
+  ClipboardList
 } from "lucide-react";
 import InputError from "@/components/input-error";
 import { Button } from "@/components/ui/button";
@@ -47,6 +49,8 @@ export default function ResidentSettings() {
     { name: "Profile", icon: User, href: "/resident/profile" },
     { name: "Barangay Official", icon: ShieldCheck, href: "/resident/officials" },
     { name: "Request Document", icon: FileText, href: "/resident/document-requests" },
+    { name: "Blotter", icon: ClipboardList, href: "/resident/document-requests" },
+    { name: "Suggest", icon: MessageSquare, href: "/resident/feedback" },
     { name: "Settings", icon: Settings, href: "/resident/settings" },
   ];
 

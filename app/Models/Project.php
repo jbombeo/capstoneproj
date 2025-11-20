@@ -2,32 +2,39 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Project extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'sk_official_id',
         'title',
         'description',
+        'status',
+        'budget',
         'start_date',
         'end_date',
-        'location',
-        'budget',
-        'status',
+        'image_path',
+        'created_by',
     ];
 
-    // Relationships
-    public function skOfficial()
+    protected $appends = ['image_url'];
+
+    public function getImageUrlAttribute(): ?string
     {
-        return $this->belongsTo(SKOfficial::class);
+        return $this->image_path ? asset('storage/' . $this->image_path) : null;
     }
 
-    public function participations()
+    public function user()
     {
-        return $this->hasMany(Participation::class);
+        return $this->belongsTo(User::class, 'created_by');
     }
+
+    public function participants()
+{
+    return $this->hasMany(\App\Models\Participation::class);
+}
 }

@@ -57,7 +57,7 @@ class AuthenticatedSessionController extends Controller
         return match($user->role) {
             'admin' => redirect()->route('dashboard'),
             'sk' => redirect()->route('sk.dashboard'),
-            'youth' => redirect()->route('youth.dashboard'),
+            'youth' => redirect()->route('youth.home'),
             default => redirect()->route('resident.home'), // resident
         };
     }

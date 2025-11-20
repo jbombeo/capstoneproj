@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
 use App\Models\Zone;
+use App\Models\Household;
 
 class Resident extends Model
 {
@@ -14,7 +15,7 @@ class Resident extends Model
     protected $table = 'resident';
 
     protected $fillable = [
-      'user_id',
+        'user_id',
         'email',
         'last_name',
         'first_name',
@@ -25,9 +26,10 @@ class Resident extends Model
         'zone_id',
         'total_household',
         'relationto_head_of_family',
+        'family_head_id',
+        'household_no',
         'civil_status',
         'occupation',
-        'household_no',
         'religion',
         'nationality',
         'gender',
@@ -37,34 +39,33 @@ class Resident extends Model
         'status',
     ];
 
-    protected $casts = [
-        'birth_date' => 'date',
-        'monthly_income' => 'decimal:2',
-    ];
+    // A resident belongs to a zone
+    public function zone()
+    {
+        return $this->belongsTo(Zone::class, 'zone_id');
+    }
 
+    // A resident belongs to a user account (after approval)
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-        public function requests()
+    // Resident belongs to a family head (SELF RELATIONSHIP)
+    public function familyHead()
     {
-        return $this->hasMany(DocumentRequest::class);
-    }
-    
-    public function zone()
-    {
-        return $this->belongsTo(Zone::class);
+        return $this->belongsTo(Resident::class, 'family_head_id');
     }
 
-    public function getFullNameAttribute(): string
+    // Head has many members
+    public function familyMembers()
     {
-        return $this->first_name
-            . ($this->middle_name ? ' '.$this->middle_name : '')
-            . ' '.$this->last_name;
+        return $this->hasMany(Resident::class, 'family_head_id');
     }
-    public function resident()
-{
-    return $this->hasOne(Resident::class);
-}
+
+    // Resident belongs to a household
+    public function household()
+    {
+        return $this->belongsTo(Household::class, 'household_no', 'household_no');
+    }
 }

@@ -3,38 +3,34 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Models\User;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SKOfficial extends Model
 {
-    use HasFactory;
+    protected $table = 'sk_officials';
 
     protected $fillable = [
-        'user_id',
+        'users_id',
         'position',
+        'complete_name',
+        'contact',
+        'address',
         'term_start',
         'term_end',
+        'status',
+        'image',
     ];
 
-    // Relationships
-    public function user()
+    protected $appends = ['image_url'];
+
+    public function getImageUrlAttribute(): ?string
     {
-        return $this->belongsTo(User::class);
+        return $this->image ? asset('storage/' . $this->image) : null;
     }
 
-    public function projects()
+        public function user()
     {
-        return $this->hasMany(Project::class);
-    }
-
-    public function announcements()
-    {
-        return $this->hasMany(Announcement::class);
-    }
-
-    public function scholarships()
-    {
-        return $this->hasMany(Scholarship::class);
+        return $this->belongsTo(User::class, 'users_id');
     }
 }
+

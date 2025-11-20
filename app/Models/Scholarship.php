@@ -3,29 +3,48 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Scholarship extends Model
 {
-    use HasFactory;
+    use SoftDeletes;
 
     protected $fillable = [
-        'sk_official_id',
         'title',
         'description',
-        'start_date',
-        'end_date',
-        'grant_amount',
+        'image_path',
+        'budget',
+        'open_date',
+        'close_date',
+        'created_by',
     ];
 
-    // Relationships
-    public function skOfficial()
+    protected $casts = [
+        'budget' => 'decimal:2',
+        'open_date' => 'date',
+        'close_date' => 'date',
+    ];
+
+    protected $appends = ['image_url'];
+
+    public function creator()
     {
-        return $this->belongsTo(SKOfficial::class);
+        return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function applications()
+public function applications()
+{
+    return $this->hasMany(\App\Models\ScholarshipApplication::class, 'scholarship_id');
+}
+
+    public function getImageUrlAttribute(): ?string
     {
-        return $this->hasMany(ScholarshipApplication::class);
+        return $this->image_path ? asset('storage/' . $this->image_path) : null;
     }
+
+public function scholarsApplication()
+{
+    return $this->hasMany(\App\Models\ScholarshipApplication::class, 'scholarship_id');
+}
+
 }

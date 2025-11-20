@@ -19,7 +19,7 @@ import {
 import AppLogo from './app-logo'; // ✅ custom logo
 
 const mainNavItems: NavItem[] = [
-    { title: 'Dashboard', href: '/dashboard', icon: LayoutGrid },
+    { title: 'Dashboard', href: '/sk/dashboard', icon: LayoutGrid },
     { title: 'Manage Scholarships', href: '/scholarships', icon: BookUser },
     { title: 'Youth Profiles', href: '/youth', icon: BookOpen },
     { title: 'Programs & Projects', href: '/projects', icon: BookOpen },

@@ -16,21 +16,18 @@ import {
 import { Label } from "@/components/ui/label";
 import toast, { Toaster } from "react-hot-toast";
 
-// Zone type
 interface Zone {
   id: number;
   zone: string;
-  created_at: string;
-  updated_at: string;
 }
 
-// Props from Inertia
-interface PageProps extends InertiaPageProps {
+interface PagePropsExtended extends InertiaPageProps {
   zones: Zone[];
 }
 
 export default function ZonePage() {
-  const { zones } = usePage<PageProps>().props;
+  const { zones } = usePage<PagePropsExtended>().props;
+
   const [search, setSearch] = useState("");
   const [openAdd, setOpenAdd] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
@@ -38,22 +35,14 @@ export default function ZonePage() {
 
   const [formData, setFormData] = useState({
     zone: "",
-
   });
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const resetForm = () => setFormData({ zone: "" });
 
-  // Reset form function
-  const resetForm = () =>
-    setFormData({ zone: ""});
-
-  // Filtered search
   const filteredZones = zones.filter((z) =>
     z.zone.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Add zone
   const handleAddZone = () => {
     router.post("/zones", formData, {
       onSuccess: () => {
@@ -65,69 +54,49 @@ export default function ZonePage() {
     });
   };
 
-  // Open edit dialog
   const handleEditZone = (zone: Zone) => {
     setEditingZone(zone);
-    setFormData({
-      zone: zone.zone,
-
-    });
+    setFormData({ zone: zone.zone });
     setOpenEdit(true);
   };
 
-  // Update zone
   const handleUpdateZone = () => {
     if (!editingZone) return;
+
     router.put(`/zones/${editingZone.id}`, formData, {
       onSuccess: () => {
         resetForm();
-        setOpenEdit(false);
         setEditingZone(null);
+        setOpenEdit(false);
         toast.success("Zone updated successfully!");
       },
       onError: () => toast.error("Failed to update zone."),
     });
   };
 
-  // Delete zone (open modal)
-  const handleDeleteZone = (id: number) => {
-    setSelectedId(id);
-    setIsModalOpen(true);
-  };
-
-  // Confirm delete
-  const confirmDelete = () => {
-    if (selectedId) {
-      router.delete(`/zones/${selectedId}`, {
-        onSuccess: () => {
-          toast.success("Zone deleted successfully!");
-          setIsModalOpen(false);
-          setSelectedId(null);
-        },
-        onError: () => toast.error("Failed to delete zone."),
-      });
-    }
-  };
-
   return (
     <AppLayout breadcrumbs={[{ title: "Zones", href: "#" }]}>
       <Head title="Zones" />
-      <Toaster position="top-center" reverseOrder={false} />
+      <Toaster position="top-right" />
 
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8 bg-green-600 text-white shadow-lg p-6">
-        <h1 className="text-3xl font-bold">Zone List</h1>
+      {/* HEADER */}
+      <div className="mb-10 bg-gradient-to-r from-green-700 to-green-500 text-white p-8 rounded-xl shadow-xl">
+        <h1 className="text-4xl font-extrabold">Barangay Zones</h1>
+        <p className="opacity-90 text-sm">
+          Manage and organize residential zones within the barangay.
+        </p>
       </div>
 
       <div className="p-6 space-y-6">
-        {/* Search & Add */}
-        <div className="flex justify-between items-center mb-4">
+        {/* SEARCH & ADD BUTTON */}
+        <div className="flex justify-between items-center mb-6 bg-white px-5 py-4 rounded-xl shadow border">
           <Input
-            placeholder="Search by zone..."
+            placeholder="Search zone..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="max-w-sm"
+            className="max-w-md"
           />
+
           <Dialog
             open={openAdd}
             onOpenChange={(isOpen) => {
@@ -140,13 +109,15 @@ export default function ZonePage() {
                 + Add Zone
               </Button>
             </DialogTrigger>
+
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>Add New Zone</DialogTitle>
               </DialogHeader>
+
               <div className="space-y-4 mt-2">
                 <div>
-                  <Label>ZONE</Label>
+                  <Label>Zone Name</Label>
                   <Input
                     value={formData.zone}
                     onChange={(e) =>
@@ -155,6 +126,7 @@ export default function ZonePage() {
                   />
                 </div>
               </div>
+
               <DialogFooter className="mt-4">
                 <Button
                   className="w-full bg-blue-600 text-white hover:bg-blue-700"
@@ -167,17 +139,18 @@ export default function ZonePage() {
           </Dialog>
         </div>
 
-        {/* Zones Table */}
-        <Card className="shadow-md rounded-2xl overflow-x-auto">
-          <CardContent className="p-4">
-            <table className="w-full text-sm text-left border-collapse">
+        {/* TABLE */}
+        <Card className="shadow-xl rounded-2xl border overflow-x-auto">
+          <CardContent className="p-0">
+            <table className="w-full text-sm text-left table-fixed min-w-[600px]">
               <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
                 <tr>
-                  <th className="px-4 py-2">ID</th>
-                  <th className="px-4 py-2">Zone</th>
-                  <th className="px-4 py-2">Action</th>
+                  <th className="px-6 py-3 w-20">ID</th>
+                  <th className="px-6 py-3 w-96">Zone</th>
+                  <th className="px-6 py-3 w-40 text-center">Action</th>
                 </tr>
               </thead>
+
               <tbody>
                 {filteredZones.length > 0 ? (
                   filteredZones.map((zone) => (
@@ -185,9 +158,11 @@ export default function ZonePage() {
                       key={zone.id}
                       className="border-b hover:bg-gray-50 transition"
                     >
-                      <td className="px-4 py-2">{zone.id}</td>
-                      <td className="px-4 py-2">{zone.zone}</td>
-                      <td className="px-4 py-2 space-x-2">
+                      <td className="px-6 py-4 font-semibold">{zone.id}</td>
+
+                      <td className="px-6 py-4">{zone.zone}</td>
+
+                      <td className="px-6 py-4 text-center space-x-2">
                         <Button
                           size="sm"
                           variant="outline"
@@ -195,21 +170,14 @@ export default function ZonePage() {
                         >
                           Edit
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleDeleteZone(zone.id)}
-                        >
-                          Delete
-                        </Button>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
                     <td
-                      colSpan={5}
-                      className="text-center py-4 text-gray-500"
+                      colSpan={4}
+                      className="text-center py-8 text-gray-500"
                     >
                       No zones found
                     </td>
@@ -221,7 +189,7 @@ export default function ZonePage() {
         </Card>
       </div>
 
-      {/* Edit Dialog */}
+      {/* EDIT MODAL */}
       <Dialog
         open={openEdit}
         onOpenChange={(isOpen) => {
@@ -236,9 +204,10 @@ export default function ZonePage() {
           <DialogHeader>
             <DialogTitle>Edit Zone</DialogTitle>
           </DialogHeader>
+
           <div className="space-y-4 mt-2">
             <div>
-              <Label>ZONE</Label>
+              <Label>Zone Name</Label>
               <Input
                 value={formData.zone}
                 onChange={(e) =>
@@ -247,6 +216,7 @@ export default function ZonePage() {
               />
             </div>
           </div>
+
           <DialogFooter className="mt-4">
             <Button
               className="w-full bg-blue-600 text-white hover:bg-blue-700"
@@ -257,34 +227,6 @@ export default function ZonePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Delete Confirmation Modal WITHOUT black background */}
-      {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg w-96 p-6 border border-gray-300">
-            <h2 className="text-lg font-semibold mb-4 text-gray-800">
-              Confirm Delete
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to delete this zone? This action cannot be undone.
-            </p>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </AppLayout>
   );
 }

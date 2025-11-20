@@ -49,3 +49,14 @@ export interface User {
     updated_at: string;
     [key: string]: unknown; // This allows for additional properties...
 }
+
+// declare module '@inertiajs/react' {
+//   interface PageProps {
+//     user: { id: number; name: string; email: string; role: string };
+//     stats?: any;
+//     youth?: any;
+//     pending?: any;
+//     projects?: any;
+//     announcements?: any;
+//   }
+// }

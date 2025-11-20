@@ -3,41 +3,55 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Youth extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
+
+    protected $table = 'youth';
 
     protected $fillable = [
         'user_id',
-        'date_of_birth',
+        'email',
+        'last_name',
+        'first_name',
+        'middle_name',
+        'birth_date',
+        'birth_place',
+        'age',
         'gender',
-        'address',
         'contact_number',
         'skills',
-        'interests',
-        'registration_status',
+        'image',
+        'status',
     ];
 
-    // Relationships
+    protected $casts = [
+        'skills' => 'array',
+        'birth_date' => 'date',
+    ];
+
+    /** Relationships **/
+
     public function user()
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function participations()
-    {
-        return $this->hasMany(Participation::class);
-    }
-
-    public function requests()
-    {
-        return $this->hasMany(RequestModel::class);
     }
 
     public function scholarshipApplications()
     {
         return $this->hasMany(ScholarshipApplication::class);
     }
+
+    public function serviceRequests()
+    {
+        return $this->hasMany(ServiceRequest::class);
+    }
+
+    public function applications()
+{
+    return $this->hasMany(ScholarshipApplication::class);
+}
 }

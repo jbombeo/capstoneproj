@@ -4,8 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Resident;
-use App\Models\Zone;
 
 class Household extends Model
 {
@@ -16,20 +14,31 @@ class Household extends Model
     protected $fillable = [
         'household_no',
         'zone_id',
-        'household_member',
         'head_of_family',
+        'household_member',
     ];
 
+    // Household belongs to zone
+    public function zone()
+    {
+        return $this->belongsTo(Zone::class, 'zone_id');
+    }
+
+    // REQUIRED — used by controller + React
     public function headOfFamily()
     {
         return $this->belongsTo(Resident::class, 'head_of_family');
     }
 
-    /**
-     * Zone (through head of family)
-     */
-    public function zone()
+    // Optional older name — can keep or remove
+    public function head()
     {
-        return $this->belongsTo(Zone::class, 'zone_id');
+        return $this->belongsTo(Resident::class, 'head_of_family');
+    }
+
+    // All residents with this household_no
+    public function residents()
+    {
+        return $this->hasMany(Resident::class, 'household_no', 'household_no');
     }
 }

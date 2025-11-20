@@ -113,12 +113,12 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                                     )}
 
                                     {/* Sign up */}
-                                    <div className="mt-6 text-center text-sm text-muted-foreground">
+                                    {/* <div className="mt-6 text-center text-sm text-muted-foreground">
                                         Don’t have an account?{' '}
                                         <TextLink href={register()} className="font-medium">
                                             Sign up
                                         </TextLink>
-                                    </div>
+                                    </div> */}
                                 </>
                             )}
                         </Form>

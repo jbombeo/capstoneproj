@@ -1,9 +1,25 @@
 <?php
 
 use Tighten\Ziggy\Ziggy;
+
+use App\Http\Controllers\AdminScholarController;
+use App\Http\Controllers\HotlineController;
+use App\Http\Controllers\FeedbackController;
+use App\Http\Controllers\YouthOfficialController;
+use App\Http\Controllers\YouthProjectController;
+use App\Http\Controllers\YouthDashboardController;
+use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ScholarshipController;
+use App\Http\Controllers\SKOfficialController;
+use App\Http\Controllers\ScholarshipApplicationController;
+use App\Http\Controllers\ServiceRequestController;
+use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\YouthController;
+use App\Http\Controllers\SKDashboardController;
+use App\Http\Controllers\ResidentBlotterController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ResidentActivityController;
-use App\Http\Controllers\ScholarshipController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\ResidentSettingsController;
 use App\Http\Controllers\DocumentTypeController;
@@ -14,7 +30,7 @@ use App\Http\Controllers\ResidentUserController;
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\DocumentRequestController;
 use App\Http\Controllers\ZoneController;
-use App\Http\Controllers\RevenueController;
+// use App\Http\Controllers\RevenueController;
 use App\Http\Controllers\HouseholdController;
 use App\Http\Controllers\ResidentController;
 use App\Http\Controllers\BlotterController;
@@ -83,6 +99,42 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/release/{token}', [DocumentRequestController::class, 'releaseStatus'])->name('documentrequests.release.status');
     });
 
+    Route::get('/feedback', [FeedbackController::class, 'adminIndex'])->name('admin.feedback');
+    Route::patch('/feedback/{feedback}', [FeedbackController::class, 'updateStatus'])
+        ->name('admin.feedback.update');
+
+
+Route::get('/hotlines', [HotlineController::class, 'index'])
+    ->name('hotlines.index');
+
+// ---------------- HOTLINES ----------------
+
+// Everyone can view (resident + admin)
+Route::get('/hotlines', [HotlineController::class, 'index'])
+    ->name('hotlines.index');
+
+// Admin only for CRUD
+Route::middleware(['role:admin'])->group(function () {
+
+    Route::get('/hotlines/create', [HotlineController::class, 'create'])
+        ->name('hotlines.create');
+
+    Route::post('/hotlines', [HotlineController::class, 'store'])
+        ->name('hotlines.store');
+
+    Route::put('/hotlines/{hotline}', [HotlineController::class, 'update'])
+        ->name('hotlines.update');
+
+    Route::delete('/hotlines/{hotline}', [HotlineController::class, 'destroy'])
+        ->name('hotlines.destroy');
+
+    Route::get('/scholars/granted', [ScholarshipController::class, 'index'])
+        ->name('scholars.granted');
+
+    Route::get('/scholarships', [AdminScholarController::class, 'index'])
+        ->name('scholarships.index');
+});
+
     // ---------------- PRINTABLE DOCUMENTS ----------------
     Route::get('/barangay-clearances', [DocumentRequestController::class, 'barangayClearance'])->name('barangay.clearances');
     Route::get('/barangay-clearances/{documentRequest}/print', [DocumentRequestController::class, 'print'])->name('barangay-clearances.print');
@@ -107,7 +159,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // ---------------- REVENUE ----------------
-    Route::get('brgyrevenue', [RevenueController::class, 'index'])->name('brgyrevenue')->middleware('role:admin,secretary');
+   Route::get('/report/revenues', [ReportController::class, 'revenues'])
+    ->name('report.revenues')
+    ->middleware('role:admin,secretary');
 
     // ---------------- ZONES ----------------
     Route::middleware(['role:admin,secretary'])->group(function () {
@@ -150,7 +204,11 @@ Route::middleware(['auth', 'role:resident'])
 
         // Other resident services
         Route::get('/request', [ResidentUserController::class, 'request'])->name('request');
-        Route::get('/blotter', [ResidentUserController::class, 'blotter'])->name('blotter');
+
+Route::get('/blotters', [ResidentBlotterController::class, 'index'])
+    ->name('blotters');
+Route::post('/blotters', [ResidentBlotterController::class, 'store'])
+    ->name('blotters.store');
         // -----------------------------
         // Activities / Events (new)
         // -----------------------------
@@ -159,6 +217,14 @@ Route::middleware(['auth', 'role:resident'])
         Route::get('/activities/{id}', [ResidentActivityController::class, 'show'])
             ->name('activities.show');
 
+
+    Route::get('/feedback', [FeedbackController::class, 'index'])
+        ->name('resident.feedback');
+        Route::post('/feedback/store', [FeedbackController::class, 'store'])
+            ->name('resident.feedback.store');
+
+        // Route::get('/report/revenues', [ReportController::class, 'revenues'])
+        //     ->name('report.revenues');
 
         Route::get('settings', [ResidentSettingsController::class, 'index'])
             ->name('resident.settings.index');
@@ -184,18 +250,93 @@ Route::middleware(['auth', 'role:resident'])
 // })->name('dashboard')->middleware(['auth']);
 
 // Scholarship Routes (SK Official)
-Route::middleware(['auth', 'role:sk'])->group(function () {
-    // Show all scholarships + inline create/edit
-    Route::get('/scholarships', [ScholarshipController::class, 'index'])->name('scholarships.index');
+// Route::middleware(['auth', 'role:sk'])->group(function () {
+//     // Show all scholarships + inline create/edit
+//     Route::get('/scholarships', [ScholarshipController::class, 'index'])->name('scholarships.index');
 
-    // Create a new scholarship
-    Route::post('/scholarships', [ScholarshipController::class, 'store'])->name('scholarships.store');
+//     // Create a new scholarship
+//     Route::post('/scholarships', [ScholarshipController::class, 'store'])->name('scholarships.store');
 
-    // Update an existing scholarship (inline edit)
-    Route::put('/scholarships/{scholarship}', [ScholarshipController::class, 'update'])->name('scholarships.update');
+//     // Update an existing scholarship (inline edit)
+//     Route::put('/scholarships/{scholarship}', [ScholarshipController::class, 'update'])->name('scholarships.update');
 
-    // Delete a scholarship
-    Route::delete('/scholarships/{scholarship}', [ScholarshipController::class, 'destroy'])->name('scholarships.destroy');
+//     // Delete a scholarship
+//     Route::delete('/scholarships/{scholarship}', [ScholarshipController::class, 'destroy'])->name('scholarships.destroy');
+// });
+
+
+Route::middleware(['auth', 'role:sk'])
+    ->prefix('sk')
+    ->name('sk.')
+    ->group(function () {
+
+    // 🏠 SK Dashboard
+    Route::get('/dashboard', SKDashboardController::class)->name('sk.dashboard');
+
+    // 👥 Youth Management
+    Route::get('/youth', [YouthController::class, 'index'])->name('youth.index');
+    Route::get('/youth/{youth}', [YouthController::class, 'show'])->name('youth.show');
+    Route::post('/youth/{youth}/approve', [YouthController::class, 'approve'])->name('youth.approve');
+    Route::post('/youth/{youth}/reject', [YouthController::class, 'reject'])->name('youth.reject');
+
+    // 🎓 Scholarship Applications
+Route::get('/scholarship-applications', [ScholarshipApplicationController::class, 'index'])
+    ->name('scholarship-applications.index');
+    Route::get('/scholarship-applications/{application}', [ScholarshipApplicationController::class, 'show'])
+        ->name('scholarship-applications.show');
+Route::patch('/scholarship-applications/{application}/status', [ScholarshipApplicationController::class, 'updateStatus'])
+    ->name('scholarship-applications.update-status');
+    Route::delete('/scholarship-applications/{application}', [ScholarshipApplicationController::class, 'destroy'])
+        ->name('scholarship-applications.destroy');
+
+    // 📋 Service Requests
+    Route::get('/requests', [ServiceRequestController::class, 'index'])->name('requests.index');
+    Route::get('/requests/{requestModel}', [ServiceRequestController::class, 'show'])->name('requests.show');
+    Route::patch('/requests/{requestModel}/status', [ServiceRequestController::class, 'updateStatus'])
+        ->name('requests.update-status');
+    Route::delete('/requests/{requestModel}', [ServiceRequestController::class, 'destroy'])
+        ->name('requests.destroy');
+
+    // 📢 Announcements
+    Route::resource('announcements', AnnouncementController::class);
+
+    // 🏗️ Projects
+    Route::resource('projects', ProjectController::class);
+
+    // 🧑‍⚖️ SK Officials
+    Route::resource('officials', SKOfficialController::class);
+
+    // 🎓 Scholarships
+    Route::resource('scholarships', ScholarshipController::class);
+    Route::post('/scholarships/{id}/restore', [ScholarshipController::class, 'restore'])
+        ->name('scholarships.restore');
+});
+
+Route::middleware(['auth', 'role:youth'])
+    ->prefix('youth')
+    ->name('youth.')
+    ->group(function () {
+    Route::get('/home', [YouthDashboardController::class, 'index'])->name('home');
+
+        Route::get('/projects', [YouthDashboardController::class, 'projects'])->name('projects');
+    Route::post('/projects/register/{id}', [YouthDashboardController::class, 'projectRegister'])->name('projects.register');
+
+    // List of projects
+    Route::get('/projects', [YouthProjectController::class, 'index']);
+
+    // Register for a project
+    Route::post('/projects/register/{project}', [YouthProjectController::class, 'register']);
+
+    Route::get('/scholarships', [YouthDashboardController::class, 'scholarships'])->name('scholarships');
+    // Route::post('/scholarships/apply/{id}', [YouthDashboardController::class, 'scholarshipApply'])->name('scholarships.apply');
+Route::post('/scholarships/{id}/apply', [YouthDashboardController::class, 'apply'])
+    ->name('scholarships.apply');
+
+    Route::get('/official', [YouthOfficialController::class, 'official'])
+        ->name('officials');
+    Route::get('/settings', [YouthDashboardController::class, 'settings'])->name('settings');
+    Route::post('/settings/update-password', [YouthDashboardController::class, 'updatePassword'])->name('settings.updatePassword');
+    
 });
 
 

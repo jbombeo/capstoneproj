@@ -13,6 +13,8 @@ import {
   Trophy,
   Heart as HeartIcon,
   FileText,
+  MessageSquare,
+  ClipboardList
 } from "lucide-react";
 
 interface ActivityPhoto {
@@ -61,6 +63,8 @@ export default function ResidentHome({ activities = [] }: { activities?: Activit
     { name: "Profile", icon: User, href: "/resident/profile" },
     { name: "Barangay Official", icon: ShieldCheck, href: "/resident/officials" },
     { name: "Request Document", icon: FileText, href: "/resident/document-requests" },
+    { name: "Blotter", icon: ClipboardList, href: "/resident/blotters" },
+    { name: "Suggest", icon: MessageSquare, href: "/resident/feedback" },
     { name: "Settings", icon: Settings, href: "/resident/settings" },
   ];
 

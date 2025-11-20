@@ -36,4 +36,15 @@ class User extends Authenticatable
     {
         return $this->role === $role;
     }
+
+    public function skOfficial()
+{
+    return $this->hasOne(SKOfficial::class);
+}
+
+public function youth()
+{
+    return $this->hasOne(Youth::class);
+}
+
 }

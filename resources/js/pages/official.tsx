@@ -14,6 +14,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 
 interface Official {
   id: number;
@@ -51,12 +52,10 @@ export default function OfficialPage() {
     image: null as File | null,
   });
 
-  // Filtered search
   const filteredOfficials = officials.filter((o) =>
     o.complete_name.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Add official
   const handleAddOfficial = () => {
     const data = new FormData();
     Object.entries(formData).forEach(([key, value]) => {
@@ -82,7 +81,6 @@ export default function OfficialPage() {
     });
   };
 
-  // Open edit dialog
   const handleEditOfficial = (official: Official) => {
     setEditingOfficial(official);
     setFormData({
@@ -98,7 +96,6 @@ export default function OfficialPage() {
     setOpenEdit(true);
   };
 
-  // Update official
   const handleUpdateOfficial = () => {
     if (!editingOfficial) return;
 
@@ -117,49 +114,54 @@ export default function OfficialPage() {
     });
   };
 
-  // Delete official
   const handleDeleteOfficial = (id: number) => {
     if (confirm("Are you sure you want to delete this official?")) {
       router.delete(`/officials/${id}`, {
-        onSuccess: () => {
-          alert("Official deleted successfully!");
-        },
+        onSuccess: () => alert("Official deleted successfully!"),
       });
     }
+  };
+
+  const imagePath = (img?: string | null) => {
+    return img ? `/storage/${img}` : "/images/default-avatar.png";
   };
 
   return (
     <AppLayout breadcrumbs={[{ title: "Officials", href: "#" }]}>
       <Head title="Officials" />
 
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8 bg-green-600 text-white shadow-lg p-6">
-        <h1 className="text-3xl font-bold">Officials List</h1>
+      {/* HEADER */}
+      <div className="mb-10 bg-gradient-to-r from-green-700 to-green-500 text-white p-8 rounded-xl shadow-xl">
+        <h1 className="text-4xl font-extrabold">Barangay Officials</h1>
+        <p className="opacity-90 text-sm">
+          Official Barangay Roster and Term Information
+        </p>
       </div>
 
       <div className="p-6 space-y-6">
-        {/* Search & Add */}
-        <div className="flex justify-between items-center mb-4">
+        {/* SEARCH BAR & ADD BUTTON */}
+        <div className="flex justify-between items-center mb-6 bg-white px-5 py-4 rounded-xl shadow border">
           <Input
-            placeholder="Search by name..."
+            placeholder="Search by official name..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="max-w-sm"
+            className="max-w-md"
           />
 
+          {/* Add Official Dialog */}
           <Dialog open={openAdd} onOpenChange={setOpenAdd}>
             <DialogTrigger asChild>
               <Button className="bg-blue-600 text-white hover:bg-blue-700">
                 + Add Official
               </Button>
             </DialogTrigger>
+
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>Add New Official</DialogTitle>
               </DialogHeader>
 
-              <div className="space-y-4 mt-2">
-                {/* Position Dropdown */}
+              <div className="space-y-4 mt-4">
                 <div>
                   <Label>Position</Label>
                   <select
@@ -173,6 +175,7 @@ export default function OfficialPage() {
                     <option value="Punong Barangay">Punong Barangay</option>
                     <option value="Barangay Kagawad">Barangay Kagawad</option>
                     <option value="Secretary">Secretary</option>
+                    <option value="Treasurer">Treasurer</option>
                   </select>
                 </div>
 
@@ -198,6 +201,7 @@ export default function OfficialPage() {
                     }
                   />
                 </div>
+
                 <div>
                   <Label>Term End</Label>
                   <Input
@@ -208,6 +212,7 @@ export default function OfficialPage() {
                     }
                   />
                 </div>
+
                 <div>
                   <Label>Status</Label>
                   <select
@@ -222,6 +227,7 @@ export default function OfficialPage() {
                     <option value="Leave">Leave</option>
                   </select>
                 </div>
+
                 <div>
                   <Label>Image</Label>
                   <input
@@ -229,7 +235,10 @@ export default function OfficialPage() {
                     accept="image/*"
                     onChange={(e) => {
                       if (e.target.files) {
-                        setFormData({ ...formData, image: e.target.files[0] });
+                        setFormData({
+                          ...formData,
+                          image: e.target.files[0],
+                        });
                       }
                     }}
                   />
@@ -248,23 +257,24 @@ export default function OfficialPage() {
           </Dialog>
         </div>
 
-        {/* Officials Table */}
-        <Card className="shadow-md rounded-2xl overflow-x-auto">
-          <CardContent className="p-4">
-            <table className="w-full text-sm text-left border-collapse">
+        {/* TABLE */}
+        <Card className="shadow-xl rounded-2xl border overflow-x-auto">
+          <CardContent className="p-0">
+            <table className="w-full text-sm text-left table-fixed min-w-[1100px]">
               <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
                 <tr>
-                  <th className="px-4 py-2">Image</th>
-                  <th className="px-4 py-2">Position</th>
-                  <th className="px-4 py-2">Name</th>
-                  <th className="px-4 py-2">Contact</th>
-                  <th className="px-4 py-2">Address</th>
-                  <th className="px-4 py-2">Term Start</th>
-                  <th className="px-4 py-2">Term End</th>
-                  <th className="px-4 py-2">Status</th>
-                  <th className="px-4 py-2">Action</th>
+                  <th className="px-6 py-3 w-28">Image</th>
+                  <th className="px-6 py-3 w-56">Position</th>
+                  <th className="px-6 py-3 w-64">Name</th>
+                  <th className="px-6 py-3 w-40">Contact</th>
+                  <th className="px-6 py-3 w-64">Address</th>
+                  <th className="px-6 py-3 w-40">Term Start</th>
+                  <th className="px-6 py-3 w-40">Term End</th>
+                  <th className="px-6 py-3 w-32 text-center">Status</th>
+                  <th className="px-6 py-3 w-36 text-center">Action</th>
                 </tr>
               </thead>
+
               <tbody>
                 {filteredOfficials.length > 0 ? (
                   filteredOfficials.map((official) => (
@@ -272,25 +282,42 @@ export default function OfficialPage() {
                       key={official.id}
                       className="border-b hover:bg-gray-50 transition"
                     >
-                      <td className="px-4 py-2">
-                        {official.image ? (
-                          <img
-                            src={`/storage/${official.image}`}
-                            alt={official.complete_name}
-                            className="w-12 h-12 rounded-full object-cover"
-                          />
-                        ) : (
-                          "No image"
-                        )}
+                      <td className="px-6 py-4">
+                        <img
+                          src={imagePath(official.image)}
+                          className="w-12 h-12 rounded-full object-cover border shadow"
+                        />
                       </td>
-                      <td className="px-4 py-2">{official.position}</td>
-                      <td className="px-4 py-2">{official.complete_name}</td>
-                      <td className="px-4 py-2">{official.contact}</td>
-                      <td className="px-4 py-2">{official.address}</td>
-                      <td className="px-4 py-2">{official.term_start}</td>
-                      <td className="px-4 py-2">{official.term_end}</td>
-                      <td className="px-4 py-2">{official.status}</td>
-                      <td className="px-4 py-2 space-x-2">
+
+                      <td className="px-6 py-4 font-semibold text-gray-900">
+                        {official.position}
+                      </td>
+
+                      <td className="px-6 py-4">{official.complete_name}</td>
+
+                      <td className="px-6 py-4">{official.contact}</td>
+
+                      <td className="px-6 py-4">{official.address}</td>
+
+                      <td className="px-6 py-4">{official.term_start}</td>
+
+                      <td className="px-6 py-4">{official.term_end}</td>
+
+                      <td className="px-6 py-4 text-center">
+                        <Badge
+                          className={
+                            official.status === "Active"
+                              ? "bg-green-600"
+                              : official.status === "Leave"
+                              ? "bg-yellow-500"
+                              : "bg-gray-500"
+                          }
+                        >
+                          {official.status}
+                        </Badge>
+                      </td>
+
+                      <td className="px-6 py-4 text-center space-x-2">
                         <Button
                           size="sm"
                           variant="outline"
@@ -298,6 +325,7 @@ export default function OfficialPage() {
                         >
                           Edit
                         </Button>
+
                         <Button
                           size="sm"
                           variant="destructive"
@@ -310,7 +338,7 @@ export default function OfficialPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={9} className="text-center py-4 text-gray-500">
+                    <td colSpan={9} className="text-center py-8 text-gray-500">
                       No officials found
                     </td>
                   </tr>
@@ -321,15 +349,14 @@ export default function OfficialPage() {
         </Card>
       </div>
 
-      {/* Edit Dialog */}
+      {/* EDIT MODAL */}
       <Dialog open={openEdit} onOpenChange={setOpenEdit}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Official</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 mt-2">
-            {/* Position Dropdown */}
+          <div className="space-y-4 mt-4">
             <div>
               <Label>Position</Label>
               <select
@@ -343,6 +370,7 @@ export default function OfficialPage() {
                 <option value="Punong Barangay">Punong Barangay</option>
                 <option value="Barangay Kagawad">Barangay Kagawad</option>
                 <option value="Secretary">Secretary</option>
+                <option value="Treasurer">Treasurer</option>
               </select>
             </div>
 
@@ -368,6 +396,7 @@ export default function OfficialPage() {
                 }
               />
             </div>
+
             <div>
               <Label>Term End</Label>
               <Input
@@ -378,6 +407,7 @@ export default function OfficialPage() {
                 }
               />
             </div>
+
             <div>
               <Label>Status</Label>
               <select
@@ -392,6 +422,7 @@ export default function OfficialPage() {
                 <option value="Leave">Leave</option>
               </select>
             </div>
+
             <div>
               <Label>Image</Label>
               <input
@@ -399,7 +430,10 @@ export default function OfficialPage() {
                 accept="image/*"
                 onChange={(e) => {
                   if (e.target.files) {
-                    setFormData({ ...formData, image: e.target.files[0] });
+                    setFormData({
+                      ...formData,
+                      image: e.target.files[0],
+                    });
                   }
                 }}
               />

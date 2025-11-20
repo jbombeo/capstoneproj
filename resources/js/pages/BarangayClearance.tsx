@@ -9,10 +9,31 @@ import toast, { Toaster } from "react-hot-toast";
 import axios from "axios";
 import { QRCodeCanvas } from "qrcode.react";
 import QRScannerModal from "@/components/modals/QRScannerModal";
+import {
+  Printer,
+  RotateCcw,
+  Clock,
+  PackageCheck,
+  CheckCircle,
+} from "lucide-react";
 
-// ==========================
-// Types
-// ==========================
+/**
+ * Barangay Clearance page (updated action column — colored icons)
+ *
+ * - Icons are color-coded:
+ *   - Print: blue
+ *   - Reprint: orange
+ *   - Pending: yellow
+ *   - Ready for pick-up: blue/teal (PackageCheck)
+ *   - Released: green
+ *
+ * - Tooltips use the button `title` attribute (not passed to Lucide components).
+ * - Avoids passing unsupported props to Lucide icons (fixes the TS error).
+ */
+
+/* ==========================
+   Types
+   ========================== */
 interface Resident {
   id: number;
   first_name: string;
@@ -38,22 +59,26 @@ interface PageProps extends InertiaPageProps {
   officials: Official[];
 }
 
-// ==========================
-// Helper: Day suffix
-// ==========================
+/* ==========================
+   Helper: Day suffix
+   ========================== */
 const getDayWithSuffix = (day: number) => {
   if (day > 3 && day < 21) return `${day}th`;
   switch (day % 10) {
-    case 1: return `${day}st`;
-    case 2: return `${day}nd`;
-    case 3: return `${day}rd`;
-    default: return `${day}th`;
+    case 1:
+      return `${day}st`;
+    case 2:
+      return `${day}nd`;
+    case 3:
+      return `${day}rd`;
+    default:
+      return `${day}th`;
   }
 };
 
-// ==========================
-// Main Component
-// ==========================
+/* ==========================
+   Component
+   ========================== */
 export default function BarangayClearance() {
   const { props } = usePage<PageProps>();
   const [clearances, setClearances] = useState<DocumentRequest[]>(props.clearances || []);
@@ -64,32 +89,32 @@ export default function BarangayClearance() {
   const [showScanner, setShowScanner] = useState(false);
 
   const today = new Date();
-  const formattedDate = `${getDayWithSuffix(today.getDate())} of ${today.toLocaleDateString("en-US", { month: "long" })}, ${today.getFullYear()}`;
+  const formattedDate = `${getDayWithSuffix(today.getDate())} of ${today.toLocaleDateString("en-US", {
+    month: "long",
+  })}, ${today.getFullYear()}`;
 
-  const punongBarangay = officials.find(o => o.position === "Punong Barangay");
-  const kagawads = officials.filter(o => o.position === "Barangay Kagawad");
-  const skChairman = officials.find(o => o.position === "SK Chairman");
-  const secretary = officials.find(o => ["Secretary", "Barangay Secretary"].includes(o.position));
-  const treasurer = officials.find(o => ["Treasurer", "Barangay Treasurer"].includes(o.position));
+  const punongBarangay = officials.find((o) => o.position === "Punong Barangay");
+  const kagawads = officials.filter((o) => o.position === "Barangay Kagawad");
+  const skChairman = officials.find((o) => o.position === "SK Chairman");
+  const secretary = officials.find((o) => ["Secretary", "Barangay Secretary"].includes(o.position));
+  const treasurer = officials.find((o) => ["Treasurer", "Barangay Treasurer"].includes(o.position));
 
-  // ==========================
-  // Handle QR Scan Success
-  // ==========================
+  /* ==========================
+     QR scan success handler
+     ========================== */
   const handleQrScanSuccess = async (token: string) => {
     try {
       await axios.post(`/documentrequests/release/${token}`);
-      setClearances(prev =>
-        prev.map(doc => (doc.qr_token === token ? { ...doc, status: "released" } : doc))
-      );
+      setClearances((prev) => prev.map((doc) => (doc.qr_token === token ? { ...doc, status: "released" } : doc)));
       toast.success("Document status updated to Released!");
     } catch {
       toast.error("Failed to release document. Invalid QR code?");
     }
   };
 
-  // ==========================
-  // Handle Print / Reprint
-  // ==========================
+  /* ==========================
+     Handle Print / Reprint
+     ========================== */
   const handlePrint = async (doc: DocumentRequest, reprint = false) => {
     setPrintDoc(doc);
 
@@ -100,9 +125,7 @@ export default function BarangayClearance() {
       try {
         if (!reprint && doc.status === "on process") {
           const res = await axios.put(`/documentrequests/${doc.id}/ready`);
-          setClearances(prev =>
-            prev.map(r => (r.id === doc.id ? { ...r, status: "ready for pick-up" } : r))
-          );
+          setClearances((prev) => prev.map((r) => (r.id === doc.id ? { ...r, status: "ready for pick-up" } : r)));
           toast.success(res.data.message || "Document marked Ready for Pick-up!");
         } else if (reprint) {
           toast.success("Reprinting document...");
@@ -118,26 +141,20 @@ export default function BarangayClearance() {
     }, 200);
   };
 
-  // ==========================
-  // Filter Clearances
-  // ==========================
-  const filteredClearances = clearances.filter(req =>
+  /* Filter clearances */
+  const filteredClearances = clearances.filter((req) =>
     `${req.resident.first_name} ${req.resident.last_name}`.toLowerCase().includes(search.toLowerCase())
   );
 
-  const getQrUrl = (token?: string) =>
-    token ? `${window.location.origin}/documentrequests/release/${token}` : "";
+  const getQrUrl = (token?: string) => (token ? `${window.location.origin}/documentrequests/release/${token}` : "");
 
-  // ==========================
-  // Render
-  // ==========================
   return (
     <AppLayout breadcrumbs={[{ title: "Barangay Clearance", href: "/barangay-clearance" }]}>
       <Head title="Barangay Clearance" />
       <Toaster position="top-right" />
 
       {/* Header */}
-      <div className="flex justify-between items-center mb-8 bg-green-600 text-white shadow p-6">
+      <div className="flex justify-between items-center mb-8 bg-green-600 text-white shadow p-6 rounded-lg">
         <h1 className="text-2xl font-bold">Barangay Clearance Requests</h1>
         <Button
           onClick={() => setShowScanner(true)}
@@ -147,12 +164,12 @@ export default function BarangayClearance() {
         </Button>
       </div>
 
-      {/* Search & Table */}
+      {/* Search + Table */}
       <div className="p-6 space-y-6">
         <Input
           placeholder="Search by resident name..."
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={(e) => setSearch(e.target.value)}
           className="max-w-sm mb-4"
         />
 
@@ -169,36 +186,62 @@ export default function BarangayClearance() {
 
             <TableBody>
               {filteredClearances.length ? (
-                filteredClearances.map(req => (
+                filteredClearances.map((req) => (
                   <TableRow key={req.id}>
                     <TableCell>{req.resident.first_name} {req.resident.last_name}</TableCell>
                     <TableCell>{req.purpose}</TableCell>
                     <TableCell className="capitalize">{req.status}</TableCell>
+
+                    {/* Action column: icon-only modern UI (colored) */}
                     <TableCell>
-                      {req.status === "on process" && (
-                        <Button
-                          size="sm"
-                          onClick={() => handlePrint(req)}
-                          disabled={isPrinting}
-                        >
-                          {isPrinting && printDoc?.id === req.id ? "Printing..." : "Print"}
-                        </Button>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {/* Print (on-process -> Print) */}
+                        {req.status === "on process" && (
+                          <button
+                            title="Print"
+                            aria-label="Print"
+                            onClick={() => handlePrint(req)}
+                            className="p-2 rounded-md hover:bg-gray-100"
+                            disabled={isPrinting}
+                          >
+                            <Printer className="h-5 w-5 text-blue-600" />
+                          </button>
+                        )}
 
-                      {(req.status === "ready for pick-up" || req.status === "released") && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handlePrint(req, true)}
-                          disabled={isPrinting}
-                        >
-                          {isPrinting && printDoc?.id === req.id ? "Reprinting..." : "Reprint"}
-                        </Button>
-                      )}
+                        {/* Reprint (ready/released -> Reprint) */}
+                        {(req.status === "ready for pick-up" || req.status === "released") && (
+                          <button
+                            title="Reprint"
+                            aria-label="Reprint"
+                            onClick={() => handlePrint(req, true)}
+                            className="p-2 rounded-md hover:bg-gray-100"
+                            disabled={isPrinting}
+                          >
+                            <RotateCcw className="h-5 w-5 text-orange-500" />
+                          </button>
+                        )}
 
-                      {req.status === "pending" && (
-                        <span className="text-gray-500 font-semibold">Pending</span>
-                      )}
+                        {/* Pending (show clock icon) */}
+                        {req.status === "pending" && (
+                          <div title="Pending" className="p-2 rounded-md bg-yellow-50">
+                            <Clock className="h-5 w-5 text-yellow-600" />
+                          </div>
+                        )}
+
+                        {/* Ready for pick-up indicator */}
+                        {req.status === "ready for pick-up" && (
+                          <div title="Ready for pick-up" className="p-2 rounded-md bg-teal-50">
+                            <PackageCheck className="h-5 w-5 text-teal-600" />
+                          </div>
+                        )}
+
+                        {/* Released indicator */}
+                        {req.status === "released" && (
+                          <div title="Released" className="p-2 rounded-md bg-green-50">
+                            <CheckCircle className="h-5 w-5 text-green-600" />
+                          </div>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -221,7 +264,7 @@ export default function BarangayClearance() {
         onScanSuccess={handleQrScanSuccess}
       />
 
-      {/* Print Layout */}
+      {/* Print Layout (hidden, printed only) */}
       {printDoc && (
         <div
           id="print-area"
@@ -231,7 +274,7 @@ export default function BarangayClearance() {
             height: "270mm",
             padding: "10mm",
             border: "10px solid #1B5E20",
-            fontFamily: "'Times New Roman', serif"
+            fontFamily: "'Times New Roman', serif",
           }}
         >
           {/* Header & Logos */}
@@ -256,28 +299,44 @@ export default function BarangayClearance() {
           </div>
 
           <div className="grid grid-cols-3 gap-6 mt-10">
-            {/* Officials Sidebar */}
+            {/* Officials sidebar */}
             <div className="col-span-1 text-sm p-4 border border-green-700 rounded-lg bg-green-100 shadow">
               <h2 className="font-bold text-green-800 text-center mb-4 text-base">
                 Barangay Officials
               </h2>
               {punongBarangay && (
                 <p className="font-bold">
-                  {punongBarangay.complete_name}<br />Punong Barangay
+                  {punongBarangay.complete_name}
+                  <br />
+                  Punong Barangay
                 </p>
               )}
               {kagawads.length > 0 && <p className="underline">Barangay Kagawad</p>}
               <ul className="ml-2 mb-3 list-disc list-inside">
-                {kagawads.map(k => <li key={k.id}>{k.complete_name}</li>)}
+                {kagawads.map((k) => (
+                  <li key={k.id}>{k.complete_name}</li>
+                ))}
               </ul>
               {skChairman && (
-                <p className="mt-2 font-bold">{skChairman.complete_name}<br />SK Chairman</p>
+                <p className="mt-2 font-bold">
+                  {skChairman.complete_name}
+                  <br />
+                  SK Chairman
+                </p>
               )}
               {secretary && (
-                <p className="mt-3 font-bold">{secretary.complete_name}<br />Secretary</p>
+                <p className="mt-3 font-bold">
+                  {secretary.complete_name}
+                  <br />
+                  Secretary
+                </p>
               )}
               {treasurer && (
-                <p className="mt-3 font-bold">{treasurer.complete_name}<br />Treasurer</p>
+                <p className="mt-3 font-bold">
+                  {treasurer.complete_name}
+                  <br />
+                  Treasurer
+                </p>
               )}
             </div>
 
@@ -289,10 +348,15 @@ export default function BarangayClearance() {
 
               <div className="relative z-10">
                 <p>
-                  This is to certify that <span className="font-bold underline">{printDoc.resident.first_name} {printDoc.resident.last_name}</span> residing at Barangay Iponan, Cagayan de Oro City, is a bona fide resident of this barangay.
+                  This is to certify that{" "}
+                  <span className="font-bold underline">
+                    {printDoc.resident.first_name} {printDoc.resident.last_name}
+                  </span>{" "}
+                  residing at Barangay Iponan, Cagayan de Oro City, is a bona fide resident of this barangay.
                 </p>
                 <p className="mt-4">
-                  This certification is issued upon request for the purpose of <span className="font-bold underline">{printDoc.purpose}</span>.
+                  This certification is issued upon request for the purpose of{" "}
+                  <span className="font-bold underline">{printDoc.purpose}</span>.
                 </p>
                 <p className="mt-4">
                   Given this <span className="underline">{formattedDate}</span> at Barangay Iponan, Cagayan de Oro City, Misamis Oriental.
@@ -314,9 +378,7 @@ export default function BarangayClearance() {
           </div>
 
           <div className="absolute bottom-10 left-0 right-0 text-center">
-            <p className="text-green-800 font-bold uppercase tracking-wider text-lg">
-              Certified True Copy
-            </p>
+            <p className="text-green-800 font-bold uppercase tracking-wider text-lg">Certified True Copy</p>
           </div>
         </div>
       )}

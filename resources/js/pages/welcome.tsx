@@ -45,6 +45,9 @@ export default function Welcome() {
           <Link href="/resident/register" className="btn-agency btn-blue">
             Register Resident
           </Link>
+          <Link href="/youth/register" className="btn-agency btn-blue">
+            Register Youth
+          </Link>
             <Link href="/register" className="btn-agency btn-blue">
             Register
           </Link>

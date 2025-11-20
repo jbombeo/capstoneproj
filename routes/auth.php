@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\YouthController;
 use App\Http\Controllers\ResidentController;
 // use App\Http\Controllers\Auth\RegisterResidentController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
@@ -91,6 +92,14 @@ Route::get('/resident/register', [ResidentController::class, 'create'])
 // // Store registration (unapproved by default)
 Route::post('/resident/register', [ResidentController::class, 'store'])
     ->name('residentregister.store');
+
+
+Route::get('/youth/register', [YouthController::class, 'create'])
+    ->name('youthregister.create');
+
+Route::post('/youth/register', [YouthController::class, 'store'])
+    ->name('youthregister.store');
+
 
 // Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     

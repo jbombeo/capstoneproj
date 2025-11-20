@@ -11,27 +11,19 @@ class Zone extends Model
 {
     use HasFactory;
 
-    // Explicit table name
     protected $table = 'zone';
 
-    // Mass assignable fields
-    protected $fillable = [
-        'zone',
-        'username',
-        'password', // only if necessary
-    ];
+    protected $fillable = ['zone'];
 
-    /**
-     * Relationship: A zone has many residents
-     */
+    // Zone has many residents
     public function residents()
     {
         return $this->hasMany(Resident::class, 'zone_id');
     }
 
+    // Zone has many households
     public function households()
     {
         return $this->hasMany(Household::class, 'zone_id');
     }
-    
 }

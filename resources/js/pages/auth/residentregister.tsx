@@ -19,11 +19,18 @@ interface Zone {
   zone: string;
 }
 
-interface RegisterResidentProps {
-  zones: Zone[];
+interface HeadResident {
+  id: number;
+  zone_id: number;
+  full_name: string;
 }
 
-export default function RegisterResident({ zones }: RegisterResidentProps) {
+interface RegisterResidentProps {
+  zones: Zone[];
+  heads: HeadResident[];
+}
+
+export default function RegisterResident({ zones, heads }: RegisterResidentProps) {
   const initialState = {
     email: "",
     last_name: "",
@@ -33,26 +40,26 @@ export default function RegisterResident({ zones }: RegisterResidentProps) {
     birth_place: "",
     age: "",
     zone_id: "",
-    total_household: "1",
     relationto_head_of_family: "",
     civil_status: "",
     occupation: "",
-    household_no: "",
     religion: "",
     nationality: "Filipino",
     gender: "",
     skills: "",
     remarks: "",
+    family_head_id: "",
     image: null as File | null,
   };
 
   const [formData, setFormData] = useState(initialState);
+  const [filteredHeads, setFilteredHeads] = useState<HeadResident[]>([]);
   const [processing, setProcessing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
-  /* Auto-compute age */
+  // Auto calculate age
   const computedAge = useMemo(() => {
     if (!formData.birth_date) return "";
     const birth = new Date(formData.birth_date);
@@ -69,26 +76,87 @@ export default function RegisterResident({ zones }: RegisterResidentProps) {
     }
   }, [computedAge]);
 
-  /* Handle changes */
+  /**
+   * Behavior (Option A):
+   * - If relation === "Head": show zone selector; do not show Select Head dropdown.
+   * - If relation !== "Head": hide zone selector; show Select Head dropdown.
+   *   - Select Head dropdown will list heads from the database. Because zone is hidden,
+   *     choose to show ALL heads (you can display zone in option label), and when the user
+   *     selects a head we auto-assign formData.zone_id = head.zone_id so the backend gets correct zone.
+   */
+
+  // Keep filteredHeads in sync:
+  useEffect(() => {
+    // If registering as Head, we don't need the heads list (we hide the Select Head dropdown).
+    if (formData.relationto_head_of_family === "Head") {
+      setFilteredHeads([]);
+      // Clear family_head_id when switching to Head
+      setFormData((prev) => ({ ...prev, family_head_id: "" }));
+      return;
+    }
+
+    // When not Head, show all heads from DB (you can modify to filter by zone if you change UX)
+    setFilteredHeads(heads);
+  }, [formData.relationto_head_of_family, heads]);
+
+  // When user selects a head (family_head_id) auto-assign the zone_id from that head
+  useEffect(() => {
+    if (!formData.family_head_id) return;
+    const head = heads.find((h) => String(h.id) === String(formData.family_head_id));
+    if (head) {
+      // Auto-set zone_id to head's zone
+      setFormData((prev) => ({ ...prev, zone_id: String(head.zone_id) }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.family_head_id]);
+
   const handleChange = (field: string, value: any) => {
+    // If user changes relationto_head_of_family to Head, clear family_head_id and maybe zone if necessary.
+    if (field === "relationto_head_of_family") {
+      // set relation and clear family head selection when switching to Head
+      setFormData((prev) => ({
+        ...prev,
+        relationto_head_of_family: value,
+        family_head_id: value === "Head" ? "" : prev.family_head_id,
+        // if switching to Head, keep zone empty so user can select; if switching away, zone will be auto-set when head chosen
+        zone_id: value === "Head" ? prev.zone_id : prev.zone_id,
+      }));
+      return;
+    }
+
+    // Normal change
     setFormData((prev) => ({ ...prev, [field]: value }));
+
     if (field === "image" && value) {
       setImagePreview(URL.createObjectURL(value));
     }
   };
 
-  /* Validation */
-  const requiredFields = ["email", "last_name", "first_name", "birth_date", "zone_id", "gender"];
+  const requiredFields = ["email", "last_name", "first_name", "birth_date", "gender"];
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
+
     requiredFields.forEach((field) => {
-      if (!formData[field as keyof typeof formData]) newErrors[field] = "This field is required";
+      if (!formData[field as keyof typeof formData]) {
+        newErrors[field] = "This field is required";
+      }
     });
+
+    // If the registrant is Head, zone is required
+    if (formData.relationto_head_of_family === "Head" && !formData.zone_id) {
+      newErrors["zone_id"] = "Zone is required for head of family.";
+    }
+
+    // If not Head, family_head_id must be selected
+    if (formData.relationto_head_of_family !== "Head" && !formData.family_head_id) {
+      newErrors["family_head_id"] = "Please select your head of family.";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  /* Submit handler */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -96,7 +164,18 @@ export default function RegisterResident({ zones }: RegisterResidentProps) {
     setProcessing(true);
     setErrors({});
 
-    router.post("/resident/register", formData, {
+    // Build form data for file upload
+    const body = new FormData();
+    Object.entries(formData).forEach(([k, v]) => {
+      if (k === "image") {
+        if (v) body.append(k, v as File);
+      } else {
+        body.append(k, v === null || v === undefined ? "" : String(v));
+      }
+    });
+
+    router.post("/resident/register", body, {
+      // because we pass FormData already, no need for forceFormData (but Inertia accepts it)
       forceFormData: true,
       onSuccess: () => {
         setFormData(initialState);
@@ -105,14 +184,13 @@ export default function RegisterResident({ zones }: RegisterResidentProps) {
         router.visit("/login");
       },
       onError: (err: Record<string, string>) => {
-        setErrors(err);
+        setErrors(err || {});
         toast.error("Failed to register. Please check the form.");
       },
       onFinish: () => setProcessing(false),
     });
   };
 
-  /* Cancel */
   const confirmCancel = () => {
     setCancelDialogOpen(false);
     router.visit("/");
@@ -160,29 +238,103 @@ export default function RegisterResident({ zones }: RegisterResidentProps) {
             <TextField label="Birth Place" name="birth_place" value={formData.birth_place} onChange={handleChange} error={errors.birth_place} />
             <TextField label="Religion" name="religion" value={formData.religion} onChange={handleChange} error={errors.religion} />
             <TextField label="Nationality" name="nationality" value={formData.nationality} onChange={handleChange} error={errors.nationality} />
+
             {computedAge && (
               <div className="grid gap-2">
                 <Label className="font-medium">Age</Label>
                 <div className="p-2 border rounded bg-gray-100 text-gray-700">{computedAge}</div>
               </div>
             )}
-            <SelectField label="Zone *" name="zone_id" value={formData.zone_id} onChange={handleChange} error={errors.zone_id} options={zones.map((z) => z.zone)} optionValues={zones.map((z) => z.id.toString())} />
-            <SelectField label="Gender *" name="gender" value={formData.gender} onChange={handleChange} error={errors.gender} options={["Male", "Female", "Other"]} />
-            <SelectField label="Civil Status *" name="civil_status" value={formData.civil_status} onChange={handleChange} error={errors.civil_status} options={["Single", "Married", "Widow", "Other"]} />
+
+            {/* Show Zone ONLY when registering as Head */}
+            {formData.relationto_head_of_family === "Head" && (
+              <SelectField
+                label="Zone *"
+                name="zone_id"
+                value={formData.zone_id}
+                onChange={handleChange}
+                error={errors.zone_id}
+                options={zones.map((z) => z.zone)}
+                optionValues={zones.map((z) => z.id.toString())}
+              />
+            )}
+
+            <SelectField
+              label="Gender *"
+              name="gender"
+              value={formData.gender}
+              onChange={handleChange}
+              error={errors.gender}
+              options={["Male", "Female", "Other"]}
+            />
+
+            <SelectField
+              label="Civil Status"
+              name="civil_status"
+              value={formData.civil_status}
+              onChange={handleChange}
+              options={["Single", "Married", "Widow", "Other"]}
+            />
           </div>
 
           <SectionTitle title="Household Information" />
           <div className="grid gap-6 sm:grid-cols-2">
-            <TextField label="Total Household" name="total_household" type="number" value={formData.total_household} onChange={handleChange} error={errors.total_household} />
-            <TextField label="Relation to Head of Family" name="relationto_head_of_family" value={formData.relationto_head_of_family} onChange={handleChange} error={errors.relationto_head_of_family} />
-            <TextField label="Occupation" name="occupation" value={formData.occupation} onChange={handleChange} error={errors.occupation} />
-            <TextField label="Household No" name="household_no" value={formData.household_no} onChange={handleChange} error={errors.household_no} />
+            <SelectField
+              label="Relation to Head of Family *"
+              name="relationto_head_of_family"
+              value={formData.relationto_head_of_family}
+              onChange={handleChange}
+              error={errors.relationto_head_of_family}
+              options={[
+                "Head",
+                "Wife",
+                "Husband",
+                "Son",
+                "Daughter",
+                "Brother",
+                "Sister",
+                "Relative",
+                "Boarder",
+                "Other",
+              ]}
+              optionValues={[
+                "Head",
+                "Wife",
+                "Husband",
+                "Son",
+                "Daughter",
+                "Brother",
+                "Sister",
+                "Relative",
+                "Boarder",
+                "Other",
+              ]}
+            />
+
+            <TextField label="Occupation" name="occupation" value={formData.occupation} onChange={handleChange} />
+
+            {/* Show Select Head dropdown only if NOT Head */}
+            {formData.relationto_head_of_family && formData.relationto_head_of_family !== "Head" && (
+              <SelectField
+                label="Select Head of Family *"
+                name="family_head_id"
+                value={formData.family_head_id}
+                onChange={handleChange}
+                error={errors.family_head_id}
+                // show full_name + zone for clarity in options
+                options={filteredHeads.map((h) => {
+                  const zoneLabel = zones.find((z) => z.id === h.zone_id)?.zone ?? `Zone ${h.zone_id}`;
+                  return `${h.full_name} — ${zoneLabel}`;
+                })}
+                optionValues={filteredHeads.map((h) => h.id.toString())}
+              />
+            )}
           </div>
 
           <SectionTitle title="Additional Information" />
           <div className="grid gap-6 sm:grid-cols-2">
-            <TextField label="Skills" name="skills" value={formData.skills} onChange={handleChange} error={errors.skills} />
-            <TextField label="Remarks" name="remarks" value={formData.remarks} onChange={handleChange} error={errors.remarks} />
+            <TextField label="Skills" name="skills" value={formData.skills} onChange={handleChange} />
+            <TextField label="Remarks" name="remarks" value={formData.remarks} onChange={handleChange} />
           </div>
 
           <div className="grid gap-2">
@@ -192,7 +344,6 @@ export default function RegisterResident({ zones }: RegisterResidentProps) {
             {imagePreview && <img src={imagePreview} alt="Preview" className="w-28 h-28 mt-3 object-cover rounded-full border shadow" />}
           </div>
 
-          {/* Modern Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
             <Button
               type="submit"
@@ -249,7 +400,7 @@ function SectionTitle({ title }: { title: string }) {
   return <h2 className="text-xl font-semibold text-blue-900 border-b pb-2">{title}</h2>;
 }
 
-function TextField({ label, name, type = "text", value, onChange, error }: { label: string; name: string; type?: string; value: any; onChange: (f: string, v: any) => void; error?: string }) {
+function TextField({ label, name, type = "text", value, onChange, error }: any) {
   return (
     <div className="grid gap-2">
       <Label htmlFor={name} className="font-medium">{label}</Label>
@@ -259,13 +410,22 @@ function TextField({ label, name, type = "text", value, onChange, error }: { lab
   );
 }
 
-function SelectField({ label, name, value, onChange, error, options, optionValues }: { label: string; name: string; value: any; onChange: (f: string, v: any) => void; error?: string; options: string[]; optionValues?: string[] }) {
+function SelectField({ label, name, value, onChange, error, options, optionValues }: any) {
   return (
     <div className="grid gap-2">
-      <Label htmlFor={name} className="font-medium">{label}</Label>
-      <select id={name} value={value} onChange={(e) => onChange(name, e.target.value)} className="border rounded-lg p-2 bg-white">
-        <option value="">Select {label}</option>
-        {options.map((opt, i) => <option key={opt} value={optionValues ? optionValues[i] : opt}>{opt}</option>)}
+      <Label className="font-medium">{label}</Label>
+      <select
+        id={name}
+        value={value}
+        onChange={(e) => onChange(name, e.target.value)}
+        className="border rounded-lg p-2 bg-white"
+      >
+        <option value="">{`Select ${label}`}</option>
+        {options.map((opt: string, i: number) => (
+          <option key={i} value={optionValues ? optionValues[i] : opt}>
+            {opt}
+          </option>
+        ))}
       </select>
       {error && <InputError message={error} />}
     </div>

@@ -1,53 +1,40 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\SK;
 
-use App\Models\RequestModel;
+use App\Http\Controllers\Controller;
+use App\Models\ServiceRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class RequestController extends Controller
 {
     public function index()
     {
-        $requests = RequestModel::with('youth.user', 'skOfficial.user')->latest()->get();
-        return Inertia::render('Requests/Index', compact('requests'));
+        return Inertia::render('SK/Requests/Index', [
+            'requests' => ServiceRequest::with('user')->latest()->get()
+        ]);
     }
 
-    public function store(Request $request)
+    public function show(ServiceRequest $request)
     {
-        $request->validate([
-            'youth_id' => 'required|exists:youth,id',
-            'category' => 'required|in:complaint,suggestion,request',
-            'description' => 'required|string',
+        return Inertia::render('SK/Requests/Show', [
+            'requestItem' => $request->load('user')
         ]);
-
-        RequestModel::create([
-            'youth_id' => $request->youth_id,
-            'category' => $request->category,
-            'description' => $request->description,
-            'status' => 'pending',
-        ]);
-
-        return back()->with('success', 'Request submitted.');
     }
 
-    public function updateStatus(Request $request, RequestModel $requestModel)
+    public function updateStatus(Request $req, ServiceRequest $request)
     {
-        $request->validate([
-            'status' => 'required|in:pending,in_progress,resolved,rejected',
+        $validated = $req->validate([
+            'status'  => 'required|in:pending,in_progress,resolved,rejected',
+            'remarks' => 'nullable|string'
         ]);
 
-        $requestModel->update([
-            'status' => $request->status,
-        ]);
+        $validated['processed_by'] = Auth::id();
 
-        return back()->with('success', 'Request status updated.');
-    }
+        $request->update($validated);
 
-    public function destroy(RequestModel $requestModel)
-    {
-        $requestModel->delete();
-        return back()->with('success', 'Request deleted.');
+        return back()->with('success', 'Request updated successfully.');
     }
 }

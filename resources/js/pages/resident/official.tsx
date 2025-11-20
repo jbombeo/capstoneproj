@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Head, Link, useForm } from "@inertiajs/react";
-import { Home, User, ShieldCheck, FileText, Settings, Menu, X, LogOut } from "lucide-react";
+import { Home, User, ShieldCheck, FileText, Settings, Menu, X, LogOut, MessageSquare, ClipboardList } from "lucide-react";
 
 interface Official {
   id: number;
@@ -23,6 +23,8 @@ export default function OfficialProfile({ officials }: { officials: Official[] }
     { name: "Profile", icon: User, href: "/resident/profile" },
     { name: "Barangay Official", icon: ShieldCheck, href: "/resident/officials" },
     { name: "Request Document", icon: FileText, href: "/resident/document-requests" },
+    { name: "Blotter", icon: ClipboardList, href: "/resident/blotters" },
+    { name: "Suggest", icon: MessageSquare, href: "/resident/feedback" },
     { name: "Settings", icon: Settings, href: "/resident/settings" },
   ];
 

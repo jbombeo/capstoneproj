@@ -10,12 +10,14 @@ return new class extends Migration
     {
         Schema::create('announcements', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('sk_official_id')->constrained('sk_officials')->onDelete('cascade');
             $table->string('title');
             $table->text('content');
-            $table->string('image_path')->nullable(); 
-            $table->timestamp('date_posted')->useCurrent();
+
+            $table->string('image_path')->nullable(); // optional banner / thumbnail
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

@@ -13,6 +13,7 @@ import {
   Megaphone,
   Trophy,
   Heart,
+  MessageSquare
 } from "lucide-react";
 
 interface ActivityPhoto {
@@ -55,6 +56,8 @@ export default function ActivitiesDashboard({ activities }: Props) {
     { name: "Profile", icon: User, href: "/resident/profile" },
     { name: "Barangay Official", icon: ShieldCheck, href: "/resident/officials" },
     { name: "Request Document", icon: BookOpen, href: "/resident/document-requests" },
+    { name: "Suggest", icon: MessageSquare, href: "/resident/feedback" },
+    { name: "Blotter", icon: BookOpen, href: "/resident/document-requests" },
   ];
 
   const today = new Date().toISOString().split("T")[0];

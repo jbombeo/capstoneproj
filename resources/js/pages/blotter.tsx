@@ -11,7 +11,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import toast, { Toaster } from "react-hot-toast";
@@ -72,27 +71,28 @@ const BlotterForm: React.FC<BlotterFormProps> = ({
 }) => {
   return (
     <div className="space-y-4">
-      {/* Complainant */}
-      <div>
-        <Label htmlFor="complainant">Complainant</Label>
-        <Input
-          id="complainant"
-          value={formData.complainant}
-          onChange={(e) =>
-            setFormData((prev) => ({ ...prev, complainant: e.target.value }))
-          }
-        />
-      </div>
-      <div>
-        <Label htmlFor="complainant_address">Complainant Address</Label>
-        <Input
-          id="complainant_address"
-          value={formData.complainant_address}
-          onChange={(e) =>
-            setFormData((prev) => ({ ...prev, complainant_address: e.target.value }))
-          }
-        />
-      </div>
+      {[
+        ["complainant", "Complainant"],
+        ["complainant_address", "Complainant Address"],
+        ["complainee", "Complainee"],
+        ["complainee_address", "Complainee Address"],
+        ["complaint", "Complaint"],
+        ["action", "Action"],
+        ["incidence", "Incidence"],
+        ["handled_by", "Handled By"],
+      ].map(([key, label]) => (
+        <div key={key}>
+          <Label htmlFor={key}>{label}</Label>
+          <Input
+            id={key}
+            value={(formData as any)[key]}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, [key]: e.target.value }))
+            }
+          />
+        </div>
+      ))}
+
       <div className="flex gap-2">
         <div className="flex-1">
           <Label htmlFor="complainant_age">Complainant Age</Label>
@@ -101,7 +101,10 @@ const BlotterForm: React.FC<BlotterFormProps> = ({
             type="number"
             value={formData.complainant_age}
             onChange={(e) =>
-              setFormData((prev) => ({ ...prev, complainant_age: e.target.value }))
+              setFormData((prev) => ({
+                ...prev,
+                complainant_age: e.target.value,
+              }))
             }
           />
         </div>
@@ -111,33 +114,15 @@ const BlotterForm: React.FC<BlotterFormProps> = ({
             id="complainant_contact"
             value={formData.complainant_contact}
             onChange={(e) =>
-              setFormData((prev) => ({ ...prev, complainant_contact: e.target.value }))
+              setFormData((prev) => ({
+                ...prev,
+                complainant_contact: e.target.value,
+              }))
             }
           />
         </div>
       </div>
 
-      {/* Complainee */}
-      <div>
-        <Label htmlFor="complainee">Complainee</Label>
-        <Input
-          id="complainee"
-          value={formData.complainee}
-          onChange={(e) =>
-            setFormData((prev) => ({ ...prev, complainee: e.target.value }))
-          }
-        />
-      </div>
-      <div>
-        <Label htmlFor="complainee_address">Complainee Address</Label>
-        <Input
-          id="complainee_address"
-          value={formData.complainee_address}
-          onChange={(e) =>
-            setFormData((prev) => ({ ...prev, complainee_address: e.target.value }))
-          }
-        />
-      </div>
       <div className="flex gap-2">
         <div className="flex-1">
           <Label htmlFor="complainee_age">Complainee Age</Label>
@@ -146,7 +131,10 @@ const BlotterForm: React.FC<BlotterFormProps> = ({
             type="number"
             value={formData.complainee_age}
             onChange={(e) =>
-              setFormData((prev) => ({ ...prev, complainee_age: e.target.value }))
+              setFormData((prev) => ({
+                ...prev,
+                complainee_age: e.target.value,
+              }))
             }
           />
         </div>
@@ -156,30 +144,25 @@ const BlotterForm: React.FC<BlotterFormProps> = ({
             id="complainee_contact"
             value={formData.complainee_contact}
             onChange={(e) =>
-              setFormData((prev) => ({ ...prev, complainee_contact: e.target.value }))
+              setFormData((prev) => ({
+                ...prev,
+                complainee_contact: e.target.value,
+              }))
             }
           />
         </div>
       </div>
 
-      {/* Complaint & Status */}
-      <div>
-        <Label htmlFor="complaint">Complaint</Label>
-        <Input
-          id="complaint"
-          value={formData.complaint}
-          onChange={(e) =>
-            setFormData((prev) => ({ ...prev, complaint: e.target.value }))
-          }
-        />
-      </div>
       <div>
         <Label htmlFor="status">Status</Label>
         <select
           id="status"
           value={formData.status}
           onChange={(e) =>
-            setFormData((prev) => ({ ...prev, status: e.target.value as any }))
+            setFormData((prev) => ({
+              ...prev,
+              status: e.target.value as any,
+            }))
           }
           className="border rounded px-2 py-1 w-full"
         >
@@ -189,37 +172,6 @@ const BlotterForm: React.FC<BlotterFormProps> = ({
         </select>
       </div>
 
-      {/* Action, Incidence, Handled By */}
-      <div>
-        <Label htmlFor="action">Action</Label>
-        <Input
-          id="action"
-          value={formData.action}
-          onChange={(e) =>
-            setFormData((prev) => ({ ...prev, action: e.target.value }))
-          }
-        />
-      </div>
-      <div>
-        <Label htmlFor="incidence">Incidence</Label>
-        <Input
-          id="incidence"
-          value={formData.incidence}
-          onChange={(e) =>
-            setFormData((prev) => ({ ...prev, incidence: e.target.value }))
-          }
-        />
-      </div>
-      <div>
-        <Label htmlFor="handled_by">Handled By</Label>
-        <Input
-          id="handled_by"
-          value={formData.handled_by}
-          onChange={(e) =>
-            setFormData((prev) => ({ ...prev, handled_by: e.target.value }))
-          }
-        />
-      </div>
       <div>
         <Label htmlFor="incident_datetime">Incident Date & Time</Label>
         <Input
@@ -227,36 +179,16 @@ const BlotterForm: React.FC<BlotterFormProps> = ({
           type="datetime-local"
           value={formData.incident_datetime}
           onChange={(e) =>
-            setFormData((prev) => ({ ...prev, incident_datetime: e.target.value }))
+            setFormData((prev) => ({
+              ...prev,
+              incident_datetime: e.target.value,
+            }))
           }
         />
       </div>
 
-      {/* Buttons */}
       <div className="flex justify-end gap-2 mt-4">
-        <Button
-          variant="outline"
-          onClick={() => {
-            onCancel();
-            // Reset form when modal closes
-            setFormData({
-              complainant: "",
-              complainant_address: "",
-              complainant_age: "",
-              complainant_contact: "",
-              complainee: "",
-              complainee_address: "",
-              complainee_age: "",
-              complainee_contact: "",
-              complaint: "",
-              status: "unsettled",
-              action: "",
-              incidence: "",
-              handled_by: "",
-              incident_datetime: new Date().toISOString().slice(0, 16),
-            });
-          }}
-        >
+        <Button variant="outline" onClick={onCancel}>
           Cancel
         </Button>
         <Button onClick={onSubmit}>{submitLabel}</Button>
@@ -267,13 +199,14 @@ const BlotterForm: React.FC<BlotterFormProps> = ({
 
 export default function BlotterPage() {
   const { blotters } = usePage<BlotterPageProps>().props;
-
   const [search, setSearch] = useState("");
   const [filterMonth, setFilterMonth] = useState("");
   const [filterYear, setFilterYear] = useState("");
   const [openAdd, setOpenAdd] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
+  const [openView, setOpenView] = useState(false);
   const [editingBlotter, setEditingBlotter] = useState<Blotter | null>(null);
+  const [viewingBlotter, setViewingBlotter] = useState<Blotter | null>(null);
 
   const [formData, setFormData] = useState<BlotterFormData>({
     complainant: "",
@@ -311,20 +244,8 @@ export default function BlotterPage() {
     });
   };
 
-  const filteredBlotters = blotters.filter((b) => {
-    const matchesSearch =
-      b.complainant.toLowerCase().includes(search.toLowerCase()) ||
-      b.complainee.toLowerCase().includes(search.toLowerCase());
-
-    const blotterDate = b.incident_datetime ? new Date(b.incident_datetime) : null;
-    const matchesMonth = filterMonth ? blotterDate?.getMonth() === Number(filterMonth) - 1 : true;
-    const matchesYear = filterYear ? blotterDate?.getFullYear() === Number(filterYear) : true;
-
-    return matchesSearch && matchesMonth && matchesYear;
-  });
-
   const handleAddBlotter = () => {
-    router.post("/blotters", { ...formData }, {
+    router.post("/blotters", formData as any, {
       onSuccess: () => {
         resetForm();
         setOpenAdd(false);
@@ -349,15 +270,20 @@ export default function BlotterPage() {
       action: blotter.action ?? "",
       incidence: blotter.incidence ?? "",
       handled_by: blotter.handled_by ?? "",
-      incident_datetime: blotter.incident_datetime ?? new Date().toISOString().slice(0, 16),
+      incident_datetime:
+        blotter.incident_datetime ?? new Date().toISOString().slice(0, 16),
     });
     setOpenEdit(true);
   };
 
+  const handleViewBlotter = (blotter: Blotter) => {
+    setViewingBlotter(blotter);
+    setOpenView(true);
+  };
+
   const handleUpdateBlotter = () => {
     if (!editingBlotter) return;
-
-    router.put(`/blotters/${editingBlotter.id}`, { ...formData }, {
+    router.put(`/blotters/${editingBlotter.id}`, formData as any, {
       onSuccess: () => {
         setOpenEdit(false);
         setEditingBlotter(null);
@@ -370,9 +296,7 @@ export default function BlotterPage() {
   const handleDeleteBlotter = (id: number) => {
     if (confirm("Are you sure you want to delete this blotter?")) {
       router.delete(`/blotters/${id}`, {
-        onSuccess: () => {
-          toast.error("Blotter deleted successfully!");
-        },
+        onSuccess: () => toast.error("Blotter deleted successfully!"),
       });
     }
   };
@@ -383,31 +307,49 @@ export default function BlotterPage() {
     scheduled: "bg-blue-200 text-blue-800",
   };
 
-  const totalUnsettled = filteredBlotters.filter((b) => b.status === "unsettled").length;
-  const totalSettled = filteredBlotters.filter((b) => b.status === "settled").length;
-  const totalScheduled = filteredBlotters.filter((b) => b.status === "scheduled").length;
+  const filteredBlotters = blotters.filter((b) => {
+    const matchesSearch =
+      b.complainant.toLowerCase().includes(search.toLowerCase()) ||
+      b.complainee.toLowerCase().includes(search.toLowerCase());
+
+    const blotterDate = b.incident_datetime
+      ? new Date(b.incident_datetime)
+      : null;
+    const matchesMonth = filterMonth
+      ? blotterDate?.getMonth() === Number(filterMonth) - 1
+      : true;
+    const matchesYear = filterYear
+      ? blotterDate?.getFullYear() === Number(filterYear)
+      : true;
+
+    return matchesSearch && matchesMonth && matchesYear;
+  });
 
   const currentYear = new Date().getFullYear();
-  const yearOptions = Array.from({ length: 10 }, (_, i) => (currentYear - i).toString());
+  const yearOptions = Array.from({ length: 10 }, (_, i) =>
+    (currentYear - i).toString()
+  );
+
+  const totalUnsettled = filteredBlotters.filter(
+    (b) => b.status === "unsettled"
+  ).length;
+  const totalSettled = filteredBlotters.filter(
+    (b) => b.status === "settled"
+  ).length;
+  const totalScheduled = filteredBlotters.filter(
+    (b) => b.status === "scheduled"
+  ).length;
 
   return (
     <AppLayout breadcrumbs={[{ title: "Blotters", href: "#" }]}>
       <Head title="Blotters" />
+      <Toaster />
 
-      <Toaster
-        containerStyle={{
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-        }}
-      />
-
-      {/* Header */}
       <div className="flex justify-between items-center mb-8 bg-green-600 text-white shadow-lg p-6">
         <h1 className="text-3xl font-bold">Blotters List</h1>
       </div>
 
-      {/* Search, Filters & Add Button */}
+      {/* 🔍 Filters */}
       <div className="flex flex-wrap items-center gap-4 mb-6">
         <Input
           placeholder="Search by complainant or complainee..."
@@ -436,7 +378,9 @@ export default function BlotterPage() {
         >
           <option value="">All Years</option>
           {yearOptions.map((y) => (
-            <option key={y} value={y}>{y}</option>
+            <option key={y} value={y}>
+              {y}
+            </option>
           ))}
         </select>
 
@@ -461,7 +405,7 @@ export default function BlotterPage() {
         </Dialog>
       </div>
 
-      {/* Totals */}
+      {/* 📊 Stats */}
       <div className="flex gap-4 mb-6">
         <div className="flex-1 bg-red-100 text-red-800 rounded-lg shadow p-4 text-center">
           <div className="text-2xl font-bold">{totalUnsettled}</div>
@@ -477,7 +421,7 @@ export default function BlotterPage() {
         </div>
       </div>
 
-      {/* Table */}
+      {/* 📋 Table */}
       <Card className="shadow-md rounded-2xl overflow-x-auto">
         <CardContent className="p-4">
           <div className="overflow-y-auto max-h-[400px]">
@@ -497,25 +441,69 @@ export default function BlotterPage() {
               <tbody>
                 {filteredBlotters.length > 0 ? (
                   filteredBlotters.map((b) => (
-                    <tr key={b.id} className="border-b hover:bg-gray-50 transition">
+                    <tr
+                      key={b.id}
+                      className="border-b hover:bg-gray-50 transition"
+                    >
                       <td className="px-4 py-2">{b.complainant}</td>
                       <td className="px-4 py-2">{b.complainee}</td>
                       <td className="px-4 py-2">{b.complaint}</td>
-                      <td className={`px-4 py-2 rounded-lg font-semibold text-center ${statusColors[b.status]}`}>
-                        {b.status.charAt(0).toUpperCase() + b.status.slice(1)}
+                      <td className="px-4 py-2 text-center">
+                        <select
+                          value={b.status}
+                          onChange={(e) => {
+                            const newStatus = e.target
+                              .value as "unsettled" | "settled" | "scheduled";
+                            router.put(
+                              `/blotters/${b.id}`,
+                              { ...b, status: newStatus } as any,
+                              {
+                                preserveScroll: true,
+                                onSuccess: () =>
+                                  toast.success("Status updated!"),
+                                onError: () =>
+                                  toast.error("Failed to update status"),
+                              }
+                            );
+                          }}
+                          className={`px-2 py-1 rounded-lg font-semibold text-center border ${statusColors[b.status]}`}
+                        >
+                          <option value="unsettled">Unsettled</option>
+                          <option value="settled">Settled</option>
+                          <option value="scheduled">Scheduled</option>
+                        </select>
                       </td>
                       <td className="px-4 py-2">{b.handled_by}</td>
-                      <td className="px-4 py-2">{b.incident_datetime?.slice(0, 16).replace("T", " ")}</td>
+                      <td className="px-4 py-2">
+                        {b.incident_datetime?.slice(0, 16).replace("T", " ")}
+                      </td>
                       <td className="px-4 py-2">{b.action}</td>
                       <td className="px-4 py-2 flex gap-2">
-                        <Button size="sm" onClick={() => handleEditBlotter(b)}>Edit</Button>
-                        <Button size="sm" variant="destructive" onClick={() => handleDeleteBlotter(b.id)}>Delete</Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => handleViewBlotter(b)}
+                        >
+                          View
+                        </Button>
+                        <Button size="sm" onClick={() => handleEditBlotter(b)}>
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDeleteBlotter(b.id)}
+                        >
+                          Delete
+                        </Button>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={8} className="text-center py-4 text-gray-500">No records found</td>
+                    <td colSpan={8} className="text-center py-4 text-gray-500">
+                      No records found
+                    </td>
                   </tr>
                 )}
               </tbody>
@@ -524,7 +512,33 @@ export default function BlotterPage() {
         </CardContent>
       </Card>
 
-      {/* Edit Modal */}
+      {/* 👁️ View Dialog */}
+      <Dialog open={openView} onOpenChange={setOpenView}>
+        <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>View Blotter Details</DialogTitle>
+          </DialogHeader>
+          {viewingBlotter && (
+            <div className="space-y-3">
+              {Object.entries(viewingBlotter).map(([key, value]) => (
+                <div key={key} className="flex justify-between">
+                  <span className="font-semibold capitalize">
+                    {key.replaceAll("_", " ")}:
+                  </span>
+                  <span className="text-gray-700">{value?.toString() || "—"}</span>
+                </div>
+              ))}
+              <div className="flex justify-end mt-4">
+                <Button variant="outline" onClick={() => setOpenView(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ✏️ Edit Dialog */}
       <Dialog open={openEdit} onOpenChange={setOpenEdit}>
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>

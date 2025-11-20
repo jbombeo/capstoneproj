@@ -50,7 +50,7 @@ class RegisteredUserController extends Controller
         return match ($user->role) {
             'resident'     => redirect()->route('resident.home'),
             'sk'     => redirect()->route('sk.dashboard'),
-            'youth'  => redirect()->route('youth.dashboard'),
+            'youth'  => redirect()->route('youth.home'),
             'admin'  => redirect()->route('dashboard'), // or an admin dashboard
             default  => redirect()->intended(route('dashboard')),
         };

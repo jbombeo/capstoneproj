@@ -22,7 +22,7 @@ public function __invoke(Request $request): Response|RedirectResponse
         return match($user->role) {
             'admin' => redirect()->intended(route('dashboard')),
             'sk' => redirect()->intended(route('sk.dashboard')),
-            'youth' => redirect()->intended(route('youth.dashboard')),
+            'youth' => redirect()->intended(route('youth.home')),
             'resident' => redirect()->intended(route('resident.home')),
             default => redirect()->intended(route('home')),
         };

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Log;
 use App\Models\Resident;
+use App\Models\Household;
 use App\Models\User;
 use App\Models\Zone;
 use Illuminate\Http\Request;
@@ -27,72 +28,128 @@ public function index()
     /**
      * Show the registration form for residents.
      */
-    public function create()
-    {
-        $zones = Zone::all();
-        return inertia('auth/residentregister', compact('zones'));
-    }
+ public function create()
+{
+    $zones = Zone::all();
+
+    // Load all heads from database
+    $heads = Resident::where('relationto_head_of_family', 'Head')
+        ->select('id', 'zone_id', \DB::raw("CONCAT(first_name, ' ', last_name) AS full_name"))
+        ->get();
+
+    // Debug check (remove after testing)
+    // dd($heads);
+
+    return inertia('auth/residentregister', [
+        'zones' => $zones,
+        'heads' => $heads,
+    ]);
+}
+
 
     /**
      * Store a new resident registration.
      */
-    public function store(Request $request)
-    {
-        $request->validate([
-                    'email' => [
-            'required',
-            'email',
-            'max:255',
+public function store(Request $request)
+{
+    $request->validate([
+        'email' => [
+            'required', 'email', 'max:255',
             function ($attribute, $value, $fail) {
-                // Check in users table
-                if (\App\Models\User::where('email', $value)->exists()) {
+                if (User::where('email', $value)->exists()) {
                     $fail('This email is already registered as a user.');
                 }
-
-                // Check in resident table
-                if (\App\Models\Resident::where('email', $value)->exists()) {
+                if (Resident::where('email', $value)->exists()) {
                     $fail('This email is already used by another pending resident.');
                 }
             },
         ],
-            'email' => ['required','email','max:255','unique:resident,email','unique:users,email'],
-            'last_name' => 'required|string|max:50',
-            'first_name' => 'required|string|max:50',
-            'middle_name' => 'nullable|string|max:50',
-            'birth_date' => 'required|date',
-            'birth_place' => 'nullable|string|max:100',
-            'age' => 'required|integer|min:0',
-            'zone_id' => 'required|exists:zone,id',
-            'gender' => 'required|string|max:20',
-            'total_household' => 'nullable|integer|min:1',
-            'relationto_head_of_family' => 'nullable|string|max:50',
-            'civil_status' => 'nullable|string|max:50',
-            'occupation' => 'nullable|string|max:100',
-            'household_no' => 'nullable|integer',
-            'religion' => 'nullable|string|max:50',
-            'nationality' => 'nullable|string|max:50',
-            'skills' => 'nullable|string|max:100',
-            'remarks' => 'nullable|string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-        ]);
+        'last_name' => 'required|string|max:50',
+        'first_name' => 'required|string|max:50',
+        'birth_date' => 'required|date',
+        'zone_id' => 'required|exists:zone,id',
+        'gender' => 'required|string|max:20',
+        'relationto_head_of_family' => 'required|string|max:50',
+        'family_head_id' => 'nullable|exists:resident,id',
+        'image' => 'nullable|image|max:2048',
+    ]);
 
     $data = $request->except(['image']);
+    $data['status'] = 'pending';
+    $data['user_id'] = null;
 
-    // Handle image upload
     if ($request->hasFile('image')) {
         $data['image'] = $request->file('image')->store('resident_images', 'public');
     }
 
-    // Default status = pending
-    $data['status'] = 'pending';
+    // =======================================================
+    // CASE 1: Head of Family → CREATE NEW HOUSEHOLD
+    // =======================================================
+    if ($request->relationto_head_of_family === 'Head') {
 
-    // user_id is null for pending residents
-    $data['user_id'] = null;
+        $resident = Resident::create($data);
+
+        $nextHousehold = (Household::max('household_no') ?? 0) + 1;
+
+        Household::create([
+            'household_no' => $nextHousehold,
+            'zone_id' => $resident->zone_id,
+            'head_of_family' => $resident->id,
+            'household_member' => 1,
+        ]);
+
+        $resident->update([
+            'household_no' => $nextHousehold,
+            'family_head_id' => $resident->id,
+        ]);
+
+        return redirect()->route('login')
+            ->with('success', 'Registration submitted. Household created.');
+    }
+
+    // =======================================================
+    // CASE 2: Not Head → MUST SELECT A HEAD
+    // =======================================================
+    if (!$request->family_head_id) {
+        return back()->withErrors([
+            'family_head_id' => 'Please select your head of family.'
+        ]);
+    }
+
+    $head = Resident::find($request->family_head_id);
+
+    if (!$head || $head->relationto_head_of_family !== 'Head') {
+        return back()->withErrors([
+            'family_head_id' => 'Selected family head is invalid.'
+        ]);
+    }
+
+    if ($head->zone_id != $request->zone_id) {
+        return back()->withErrors([
+            'family_head_id' => 'Selected head belongs to another zone.'
+        ]);
+    }
+
+    $household = Household::where('head_of_family', $head->id)->first();
+
+    if (!$household) {
+        return back()->withErrors([
+            'family_head_id' => 'This head has no household assigned.'
+        ]);
+    }
+
+    // Save resident with same household_no
+    $data['household_no'] = $household->household_no;
+    $data['family_head_id'] = $head->id;
 
     Resident::create($data);
 
-    return redirect()->route('login')->with('success', 'Registration submitted. Please wait for admin approval.');
+    $household->increment('household_member');
+
+    return redirect()->route('login')
+        ->with('success', 'Registration submitted successfully.');
 }
+
 
     /**
      * Admin: Show pending residents.
