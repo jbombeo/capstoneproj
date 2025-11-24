@@ -1,1 +1,0 @@
-import{j as n}from"./app-D5QSazoS.js";import"./app-D3Labj3k.js";function o({name:t}){const e=t?.split(" ").map(i=>i[0]).join("");return n.jsx("div",{className:"w-10 h-10 bg-blue-600 text-white font-bold rounded-full flex items-center justify-center",children:e})}export{o as default};
