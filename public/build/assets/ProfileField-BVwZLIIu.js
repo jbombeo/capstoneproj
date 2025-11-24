@@ -1,1 +1,0 @@
-import{j as e}from"./app-XOPTMjug.js";import"./app-nfuc1qUJ.js";function o({label:t,value:s}){return e.jsxs("div",{children:[e.jsx("p",{className:"text-xs font-semibold text-gray-500",children:t}),e.jsx("p",{className:"text-gray-900 font-medium",children:s??"—"})]})}export{o as default};

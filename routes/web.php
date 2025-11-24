@@ -38,9 +38,39 @@ use App\Http\Controllers\BrgyOfficialController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+use Illuminate\Http\Request;
+use Laravel\Sanctum\PersonalAccessToken;
+use Illuminate\Support\Facades\Auth;
+
 Route::get('/', function () {
     return Inertia::render('welcome');
 })->name('home');
+
+Route::get('/mobile/webview/login', function (Request $request) {
+
+    $token = $request->query('token');
+
+    if (!$token) {
+        return abort(401, "Missing token.");
+    }
+
+    $accessToken = PersonalAccessToken::findToken($token);
+
+    if (!$accessToken) {
+        return abort(401, "Invalid token.");
+    }
+
+    $user = $accessToken->tokenable;
+
+    if ($user->role !== 'resident') {
+        return abort(403, "Only resident accounts can access this dashboard.");
+    }
+
+    Auth::login($user);
+
+    return redirect()->route('resident.home');
+});
+
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
@@ -161,6 +191,8 @@ Route::middleware(['role:admin'])->group(function () {
     // ---------------- REVENUE ----------------
    Route::get('/report/revenues', [ReportController::class, 'revenues'])
     ->name('report.revenues')
+
+    
     ->middleware('role:admin,secretary');
 
     // ---------------- ZONES ----------------
@@ -180,60 +212,7 @@ Route::middleware(['role:admin'])->group(function () {
     Route::resource('services', DocumentTypeController::class)->except(['show', 'create', 'edit']);
 
     // ---------------- RESIDENT ROUTES ----------------
-Route::middleware(['auth', 'role:resident'])
-    ->prefix('resident')
-    ->name('resident.')
-    ->group(function () {
-        Route::get('/home', [ResidentUserController::class, 'home'])->name('home');
 
-        // Profile
-        Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
-        Route::put('/profile/update/{id}', [ProfileController::class, 'update'])->name('profile.update');
-        Route::get('/profile/{id}', [ProfileController::class, 'show'])->name('profile.show');
-
-        // Officials (view only)
-        Route::get('/officials', [ResidentOfficialController::class, 'index'])->name('officials.index');
-
-        // Document Requests
-        Route::get('/document-requests', [DocumentRequestResidentController::class, 'index'])
-            ->name('documentrequests.index');
-        Route::post('/document-requests', [DocumentRequestResidentController::class, 'store'])
-            ->name('documentrequests.store');
-        Route::get('/document-requests/{id}', [DocumentRequestResidentController::class, 'show'])
-            ->name('documentrequests.show');
-
-        // Other resident services
-        Route::get('/request', [ResidentUserController::class, 'request'])->name('request');
-
-Route::get('/blotters', [ResidentBlotterController::class, 'index'])
-    ->name('blotters');
-Route::post('/blotters', [ResidentBlotterController::class, 'store'])
-    ->name('blotters.store');
-        // -----------------------------
-        // Activities / Events (new)
-        // -----------------------------
-        Route::get('/activities', [ResidentActivityController::class, 'index'])
-            ->name('activities');
-        Route::get('/activities/{id}', [ResidentActivityController::class, 'show'])
-            ->name('activities.show');
-
-
-    Route::get('/feedback', [FeedbackController::class, 'index'])
-        ->name('resident.feedback');
-        Route::post('/feedback/store', [FeedbackController::class, 'store'])
-            ->name('resident.feedback.store');
-
-        // Route::get('/report/revenues', [ReportController::class, 'revenues'])
-        //     ->name('report.revenues');
-
-        Route::get('settings', [ResidentSettingsController::class, 'index'])
-            ->name('resident.settings.index');
-        Route::put('settings', [ResidentSettingsController::class, 'update'])
-            ->name('resident.settings.update');
-        // Sub-pages
-        Route::get('/barangay-clearance', [ResidentUserController::class, 'barangayClearance'])->name('barangay.clearance');
-        Route::get('/certificate-indigenous', [ResidentUserController::class, 'certificateIndigenous'])->name('certificate.indigenous');
-    });
     // ⚙️ Settings under /resident/settings
     // Route::prefix('settings')->name('resident.settings.')->group(function () {
     //     Route::get('/', [ResidentSettingsController::class, 'index'])->name('index');
@@ -338,6 +317,50 @@ Route::post('/scholarships/{id}/apply', [YouthDashboardController::class, 'apply
     Route::post('/settings/update-password', [YouthDashboardController::class, 'updatePassword'])->name('settings.updatePassword');
     
 });
+
+
+// RESIDENT ROUTES - WebView will work now
+Route::middleware(['auth', 'role:resident'])
+    ->prefix('resident')
+    ->name('resident.')
+    ->group(function () {
+
+        Route::get('/home', [ResidentUserController::class, 'home'])->name('home');
+
+        Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
+        Route::put('/profile/update/{id}', [ProfileController::class, 'update'])->name('profile.update');
+        Route::get('/profile/{id}', [ProfileController::class, 'show'])->name('profile.show');
+
+        Route::get('/officials', [ResidentOfficialController::class, 'index'])->name('officials.index');
+
+        Route::get('/document-requests', [DocumentRequestResidentController::class, 'index'])
+            ->name('documentrequests.index');
+
+        Route::post('/document-requests', [DocumentRequestResidentController::class, 'store'])
+            ->name('documentrequests.store');
+
+        Route::get('/document-requests/{id}', [DocumentRequestResidentController::class, 'show'])
+            ->name('documentrequests.show');
+
+        Route::get('/request', [ResidentUserController::class, 'request'])->name('request');
+
+        Route::get('/blotters', [ResidentBlotterController::class, 'index'])->name('blotters');
+        Route::post('/blotters', [ResidentBlotterController::class, 'store'])->name('blotters.store');
+
+        Route::get('/activities', [ResidentActivityController::class, 'index'])->name('activities');
+        Route::get('/activities/{id}', [ResidentActivityController::class, 'show'])->name('activities.show');
+
+        Route::get('/feedback', [FeedbackController::class, 'index'])->name('resident.feedback');
+        Route::post('/feedback/store', [FeedbackController::class, 'store'])->name('resident.feedback.store');
+
+        Route::get('/settings', [ResidentSettingsController::class, 'index'])->name('resident.settings.index');
+        Route::put('/settings', [ResidentSettingsController::class, 'update'])->name('resident.settings.update');
+
+        Route::get('/barangay-clearance', [ResidentUserController::class, 'barangayClearance'])->name('barangay.clearance');
+        Route::get('/certificate-indigenous', [ResidentUserController::class, 'certificateIndigenous'])->name('certificate.indigenous');
+
+    });
+
 
 
 require __DIR__ . '/settings.php';

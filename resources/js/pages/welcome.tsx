@@ -48,9 +48,9 @@ export default function Welcome() {
           <Link href="/youth/register" className="btn-agency btn-blue">
             Register Youth
           </Link>
-            <Link href="/register" className="btn-agency btn-blue">
+            {/* <Link href="/register" className="btn-agency btn-blue">
             Register
-          </Link>
+          </Link> */}
         </div>
       </div>
 

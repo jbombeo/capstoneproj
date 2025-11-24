@@ -224,40 +224,48 @@ public function store(Request $request)
 
 public function approve($id)
 {
-    // Find the resident
     $resident = Resident::findOrFail($id);
 
-    // Update resident status to approved
     $resident->status = 'approved';
     $resident->save();
 
-    // If resident doesn't have a user, create one
     if (!$resident->user_id) {
-        $password = Str::random(8); // Generate random password
+
+        $password = Str::random(8);
+
         $user = User::create([
             'name' => $resident->first_name . ' ' . $resident->last_name,
             'email' => $resident->email,
             'password' => bcrypt($password),
             'role' => 'resident',
-            'is_approved' => true, // Mark as approved
+            'is_approved' => true,
         ]);
 
         $resident->user_id = $user->id;
         $resident->save();
 
-        // Optionally send email with credentials
+        // ✔ SEND EMAIL
+        Mail::to($resident->email)->send(
+            new ResidentApprovedMail($resident, $password)
+        );
 
         return response()->json([
-            'message' => 'Resident approved and user created',
+            'message' => 'Resident approved and user created. Email sent.',
             'generatedPassword' => $password,
         ]);
+
     } else {
-        // Resident already has a user: just mark is_approved true
+
         $resident->user->is_approved = true;
         $resident->user->save();
 
+        // ✔ SEND EMAIL EVEN IF USER ALREADY EXISTS
+        Mail::to($resident->email)->send(
+            new ResidentApprovedMail($resident, null)
+        );
+
         return response()->json([
-            'message' => 'Resident approved',
+            'message' => 'Resident approved. Email sent.',
         ]);
     }
 }

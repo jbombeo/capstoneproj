@@ -11,7 +11,6 @@ import {
   LogOut,
   Menu,
   X,
-  Bell,
   ChevronDown,
 } from "lucide-react";
 
@@ -35,23 +34,15 @@ export default function SKLayout({ children }: LayoutProps) {
   const form = useForm({});
   const logout = () => form.post("/logout");
 
-const menuItems = [
-  { id: "dashboard", label: "Dashboard", icon: Home, href: "/sk/dashboard" },
-  { id: "youth", label: "Youth Registry", icon: Users, href: "/sk/youth" },
-  { id: "officials", label: "SK Officials", icon: Shield, href: "/sk/officials" },
-  { id: "projects", label: "Programs & Projects", icon: Calendar, href: "/sk/projects" },
-  { id: "announcements", label: "Public Announcements", icon: Megaphone, href: "/sk/announcements" },
-
-  // SCHOLARSHIPS
-  { id: "scholarships", label: "Scholarship Programs", icon: GraduationCap, href: "/sk/scholarships" },
-
-  // SCHOLARSHIP APPLICATIONS (NEW)
-  { id: "scholarship-applications", label: "Scholarship Applications", icon: FileText, href: "/sk/scholarship-applications" },
-
-  // SERVICE REQUESTS
-  // { id: "requests", label: "Service Requests", icon: FileText, href: "/sk/requests" },
-];
-
+  const menuItems = [
+    { id: "dashboard", label: "Dashboard", icon: Home, href: "/sk/dashboard" },
+    { id: "youth", label: "Youth Registry", icon: Users, href: "/sk/youth" },
+    { id: "officials", label: "SK Officials", icon: Shield, href: "/sk/officials" },
+    { id: "projects", label: "Programs & Projects", icon: Calendar, href: "/sk/projects" },
+    { id: "announcements", label: "Public Announcements", icon: Megaphone, href: "/sk/announcements" },
+    { id: "scholarships", label: "Scholarship Programs", icon: GraduationCap, href: "/sk/scholarships" },
+    { id: "scholarship-applications", label: "Scholarship Applications", icon: FileText, href: "/sk/scholarship-applications" },
+  ];
 
   const active = (url: string) => usePage().url.startsWith(url);
 
@@ -96,13 +87,8 @@ const menuItems = [
               </div>
             </div>
 
-            {/* --- Right Section (User + Notifications) --- */}
+            {/* --- Right Section (User Only) --- */}
             <div className="flex items-center gap-5">
-              <button className="relative p-3 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition">
-                <Bell className="w-6 h-6" />
-                <span className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full border-2 border-white" />
-              </button>
-
               {/* User Dropdown */}
               <div className="relative">
                 <button

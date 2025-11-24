@@ -96,17 +96,20 @@ class ActivityController extends Controller
 
     // --- Private helper to store uploaded photos ---
     private function storePhotos(Request $request, Activity $activity)
-    {
-        if (!$request->hasFile('photos')) return;
+{
+    if (!$request->hasFile('photos')) return;
 
-        foreach ($request->file('photos') as $photo) {
-            $filename = Str::uuid() . '.' . $photo->getClientOriginalExtension();
-            $photo->storeAs('public/activity_photos', $filename);
+    foreach ($request->file('photos') as $photo) {
+        $filename = Str::uuid() . '.' . $photo->getClientOriginalExtension();
 
-            ActivityPhoto::create([
-                'activity_id' => $activity->id,
-                'filename' => 'activity_photos/' . $filename,
-            ]);
-        }
+        // ✅ Correct path
+        $photo->storeAs('activity_photos', $filename, 'public');
+
+        ActivityPhoto::create([
+            'activity_id' => $activity->id,
+            'filename' => "activity_photos/$filename",
+        ]);
     }
+}
+
 }
