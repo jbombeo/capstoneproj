@@ -1,5 +1,6 @@
-import React, { useState } from "react";
-import { Head, Link, useForm } from "@inertiajs/react";
+import React, { useState, useEffect } from "react";
+import { Head, Link, useForm, usePage } from "@inertiajs/react";
+import { PageProps as InertiaPageProps } from "@inertiajs/core";
 import {
   Home,
   User,
@@ -14,7 +15,8 @@ import {
   Heart as HeartIcon,
   FileText,
   MessageSquare,
-  ClipboardList
+  ClipboardList,
+  Bell,
 } from "lucide-react";
 
 interface ActivityPhoto {
@@ -29,6 +31,21 @@ interface Activity {
   description: string;
   dateofactivity: string;
   photos?: ActivityPhoto[];
+}
+
+interface NotificationItem {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  time: string;
+  link: string;
+}
+
+interface SharedProps extends InertiaPageProps {
+  activities?: Activity[];
+  notifications: NotificationItem[];
+  notifications_count: number;
 }
 
 const ScalesIcon = ({ className = "w-6 h-6" }) => (
@@ -51,10 +68,20 @@ const ScalesIcon = ({ className = "w-6 h-6" }) => (
 export default function ResidentHome({ activities = [] }: { activities?: Activity[] }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
+  const [showNotifications, setShowNotifications] = useState(false);
+
   const { post } = useForm();
+  const { notifications, notifications_count } = usePage<SharedProps>().props;
 
   const [likes, setLikes] = useState<Record<number, number>>({});
   const [doubleClickHeart, setDoubleClickHeart] = useState<Record<number, boolean>>({});
+
+  // Local red-dot state (front-end only)
+  const [hasUnread, setHasUnread] = useState(notifications_count > 0);
+
+  useEffect(() => {
+    setHasUnread(notifications_count > 0);
+  }, [notifications_count]);
 
   const handleLogout = () => post("/logout");
 
@@ -69,11 +96,11 @@ export default function ResidentHome({ activities = [] }: { activities?: Activit
   ];
 
   const getActivityIcon = (title: string) => {
-    const lowerTitle = title.toLowerCase();
-    if (lowerTitle.includes("patrol") || lowerTitle.includes("training")) return Calendar;
-    if (lowerTitle.includes("meeting") || lowerTitle.includes("community")) return Megaphone;
-    if (lowerTitle.includes("sports") || lowerTitle.includes("fest")) return Trophy;
-    if (lowerTitle.includes("health") || lowerTitle.includes("seminar")) return HeartIcon;
+    const lower = title.toLowerCase();
+    if (lower.includes("patrol") || lower.includes("training")) return Calendar;
+    if (lower.includes("meeting") || lower.includes("community")) return Megaphone;
+    if (lower.includes("sports") || lower.includes("fest")) return Trophy;
+    if (lower.includes("health") || lower.includes("seminar")) return HeartIcon;
     return Calendar;
   };
 
@@ -83,17 +110,29 @@ export default function ResidentHome({ activities = [] }: { activities?: Activit
   const displayActivities = tab === "upcoming" ? upcomingActivities : pastActivities;
 
   const handleLike = (activityId: number) => {
-    // Update like count locally
     setLikes((prev) => ({ ...prev, [activityId]: (prev[activityId] ?? 0) + 1 }));
-
-    // Show heart animation
     setDoubleClickHeart((prev) => ({ ...prev, [activityId]: true }));
     setTimeout(() => {
       setDoubleClickHeart((prev) => ({ ...prev, [activityId]: false }));
     }, 800);
-
-    // Optional: post to backend
     post(`/activities/${activityId}/like`);
+  };
+
+  // Close notification dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest(".notification-area")) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, []);
+
+  const handleNotificationClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    setShowNotifications((prev) => !prev);
+    setHasUnread(false);
   };
 
   return (
@@ -102,51 +141,54 @@ export default function ResidentHome({ activities = [] }: { activities?: Activit
       <div className="min-h-screen flex bg-gray-100">
         {/* Sidebar */}
         <aside
-          className={`fixed inset-0 z-40 lg:static lg:w-80 bg-gradient-to-b from-blue-900 to-blue-800 shadow-2xl flex flex-col transition-transform duration-300 ${
+          className={`fixed inset-y-0 left-0 z-40 w-72 sm:w-80 bg-gradient-to-b from-blue-900 to-blue-800 shadow-2xl flex flex-col transition-transform duration-300 transform ${
             sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-          }`}
+          } lg:static lg:translate-x-0`}
         >
-          <div className="p-8 border-b border-blue-700 flex flex-col items-center justify-center relative">
+          <div className="px-6 py-6 sm:px-8 sm:py-8 border-b border-blue-700 flex flex-col items-center justify-center relative">
             <button
-              className="lg:hidden absolute top-6 right-6 text-white"
+              className="lg:hidden absolute top-4 right-4 text-white"
               onClick={() => setSidebarOpen(false)}
             >
               <X className="w-6 h-6" />
             </button>
-            <div className="w-20 h-20 mb-3 flex items-center justify-center">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 mb-3 flex items-center justify-center">
               <img
                 src="/images/logo.png"
                 alt="Barangay Logo"
-                className="w-90 h-90 object-contain rounded-full"
+                className="w-full h-full object-contain rounded-full"
               />
             </div>
-            <h1 className="text-2xl font-bold text-white text-center">Barangay Portal</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-white text-center">
+              Barangay Portal
+            </h1>
           </div>
 
-          <nav className="flex-1 p-6 space-y-1">
+          <nav className="flex-1 px-4 sm:px-6 py-4 space-y-1 overflow-y-auto">
             {menu.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                className="flex items-center p-4 rounded-lg hover:bg-green-700/50 text-white transition group"
+                className="flex items-center px-3 py-3 sm:px-4 sm:py-3 rounded-lg hover:bg-green-700/50 text-white transition group text-sm sm:text-base"
               >
-                <item.icon className="w-5 h-5 mr-4 text-white group-hover:scale-110 transition-transform" />
+                <item.icon className="w-5 h-5 mr-3 sm:mr-4" />
                 <span className="font-medium">{item.name}</span>
               </Link>
             ))}
           </nav>
 
-          <div className="p-6 border-t border-blue-700">
+          <div className="px-4 sm:px-6 py-4 sm:py-6 border-t border-blue-700">
             <button
               onClick={handleLogout}
-              className="w-full flex items-center justify-center p-4 rounded-lg bg-blue-700/50 hover:bg-red-600 text-white transition group"
+              className="w-full flex items-center justify-center px-3 py-3 sm:px-4 sm:py-3 rounded-lg bg-blue-700/50 hover:bg-red-600 text-white text-sm sm:text-base transition"
             >
-              <LogOut className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" />
+              <LogOut className="w-5 h-5 mr-2 sm:mr-3" />
               <span className="font-medium">Logout</span>
             </button>
           </div>
         </aside>
 
+        {/* Sidebar overlay on mobile */}
         {sidebarOpen && (
           <div
             className="fixed inset-0 bg-black/50 z-30 lg:hidden"
@@ -155,37 +197,111 @@ export default function ResidentHome({ activities = [] }: { activities?: Activit
         )}
 
         {/* Main Content */}
-        <main className="flex-1 min-h-screen">
+        <main className="flex-1 min-h-screen flex flex-col">
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-500 p-8 lg:p-12 text-white shadow-lg">
-            <div className="max-w-7xl mx-auto flex justify-between items-start">
-              <div className="flex items-center gap-6">
-                <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-full border-4 border-white/30 flex items-center justify-center bg-white/10">
-                  <ScalesIcon className="w-8 h-8 lg:w-10 lg:h-10 text-white" />
+          <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-10 text-white shadow-lg">
+            <div className="max-w-7xl mx-auto flex flex-col gap-4 sm:gap-6 md:flex-row md:items-start md:justify-between">
+              {/* Left section: logo + title */}
+              <div className="flex items-center gap-3 sm:gap-4 md:gap-6">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 rounded-full border-2 sm:border-4 border-white/30 flex items-center justify-center bg-white/10">
+                  <ScalesIcon className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-10 lg:h-10 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-3xl lg:text-4xl font-bold">Welcome to the</h2>
-                  <h2 className="text-3xl lg:text-4xl font-bold">Barangay Portal</h2>
-                  <p className="mt-3 text-blue-100 text-lg">
+                  <h2 className="text-2xl sm:text-3xl md:text-3xl lg:text-4xl font-bold leading-tight">
+                    Welcome to the
+                  </h2>
+                  <h2 className="text-2xl sm:text-3xl md:text-3xl lg:text-4xl font-bold leading-tight">
+                    Barangay Portal
+                  </h2>
+                  <p className="mt-2 sm:mt-3 text-sm sm:text-base lg:text-lg text-blue-100">
                     Check the latest activities and events in your barangay
                   </p>
                 </div>
               </div>
-              <button
-                className="lg:hidden text-white bg-blue-700/50 p-2 rounded-lg"
-                onClick={() => setSidebarOpen(true)}
-              >
-                <Menu className="w-7 h-7" />
-              </button>
+
+              {/* Right section: bell + menu toggle */}
+              <div className="flex items-center justify-end gap-3 sm:gap-4">
+                {/* Notification Bell */}
+                <div className="notification-area relative">
+                  <button
+                    onClick={handleNotificationClick}
+                    className="relative p-2 sm:p-2.5 rounded-lg bg-blue-700/50 hover:bg-blue-700 transition"
+                  >
+                    <Bell className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                    {hasUnread && notifications_count > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] sm:text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center">
+                        {notifications_count > 9 ? "9+" : notifications_count}
+                      </span>
+                    )}
+                  </button>
+
+                  {showNotifications && (
+                    <div className="absolute right-0 mt-2 w-64 sm:w-72 bg-white shadow-xl rounded-xl p-3 sm:p-4 text-gray-800 z-50">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-bold text-sm sm:text-base">Notifications</h4>
+                        <button
+                          className="text-[11px] text-blue-600 hover:underline"
+                          onClick={() => setShowNotifications(false)}
+                        >
+                          Close
+                        </button>
+                      </div>
+
+                      {notifications.length === 0 ? (
+                        <p className="text-xs sm:text-sm text-gray-500">
+                          No notifications available.
+                        </p>
+                      ) : (
+                        <ul className="space-y-2 max-h-64 overflow-y-auto text-xs sm:text-sm">
+                          {notifications.map((n) => (
+                            <li
+                              key={n.id}
+                              className="p-2 sm:p-3 bg-gray-100 rounded-lg"
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="font-semibold">{n.title}</span>
+                                <span className="text-[10px] text-gray-500">
+                                  {n.type}
+                                </span>
+                              </div>
+                              <div className="text-gray-700">{n.message}</div>
+                              <div className="flex items-center justify-between mt-1">
+                                <span className="text-[10px] sm:text-[11px] text-gray-500">
+                                  {n.time}
+                                </span>
+                                <Link
+                                  href={n.link}
+                                  className="text-[10px] sm:text-[11px] text-blue-600 hover:underline"
+                                >
+                                  View
+                                </Link>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Mobile Menu Button */}
+                <button
+                  className="lg:hidden p-2 rounded-lg bg-blue-700/50 hover:bg-blue-700 text-white"
+                  onClick={() => setSidebarOpen(true)}
+                >
+                  <Menu className="w-6 h-6" />
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Tabs */}
-          <div className="max-w-7xl mx-auto p-6 lg:p-10">
-            <div className="mb-8">
-              <div className="inline-flex bg-gray-200 rounded-xl p-1 shadow-sm">
+          {/* Tabs + Activities */}
+          <div className="max-w-7xl mx-auto w-full px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10 flex-1">
+            {/* Tabs */}
+            <div className="mb-6 sm:mb-8 flex justify-center sm:justify-start">
+              <div className="inline-flex bg-gray-200 rounded-xl p-1 shadow-sm w-full max-w-xs sm:max-w-sm md:max-w-md">
                 <button
-                  className={`px-8 py-3 rounded-lg font-semibold transition-all ${
+                  className={`flex-1 px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold text-sm sm:text-base transition-all ${
                     tab === "upcoming"
                       ? "bg-blue-600 text-white shadow-md"
                       : "bg-transparent text-gray-700 hover:text-gray-900"
@@ -195,7 +311,7 @@ export default function ResidentHome({ activities = [] }: { activities?: Activit
                   Upcoming
                 </button>
                 <button
-                  className={`px-8 py-3 rounded-lg font-semibold transition-all ${
+                  className={`flex-1 px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold text-sm sm:text-base transition-all ${
                     tab === "past"
                       ? "bg-blue-600 text-white shadow-md"
                       : "bg-transparent text-gray-700 hover:text-gray-900"
@@ -207,47 +323,52 @@ export default function ResidentHome({ activities = [] }: { activities?: Activit
               </div>
             </div>
 
-            {/* Activities as Modern Posts */}
-            <section className="space-y-6">
+            {/* Activities */}
+            <section className="space-y-4 sm:space-y-6">
               {displayActivities.length === 0 ? (
-                <div className="text-center py-16">
-                  <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 text-lg">No {tab} activities or events available.</p>
+                <div className="text-center py-12 sm:py-16 px-4">
+                  <Calendar className="w-12 h-12 sm:w-16 sm:h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 text-base sm:text-lg">
+                    No {tab} activities or events available.
+                  </p>
                 </div>
               ) : (
                 displayActivities.map((activity) => {
                   const IconComponent = getActivityIcon(activity.activity);
-                  const likeCount = likes[activity.id] ?? 0;
                   const showHeart = doubleClickHeart[activity.id] ?? false;
 
                   return (
                     <div
                       key={activity.id}
-                      className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden"
+                      className="bg-white rounded-2xl shadow-md sm:shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden"
                     >
-                      {/* Header */}
-                      <div className="flex items-center p-4 border-b border-gray-100">
-                        <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center">
-                          <IconComponent className="w-6 h-6 text-white" />
+                      {/* Card Header */}
+                      <div className="flex items-center px-3 py-3 sm:px-4 sm:py-4 border-b border-gray-100">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-600 flex items-center justify-center">
+                          <IconComponent className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                         </div>
-                        <div className="ml-4 flex-1">
-                          <h3 className="text-lg font-bold text-gray-900">{activity.activity}</h3>
-                          <p className="text-sm text-gray-500">{activity.dateofactivity}</p>
+                        <div className="ml-3 sm:ml-4 flex-1">
+                          <h3 className="text-base sm:text-lg font-bold text-gray-900">
+                            {activity.activity}
+                          </h3>
+                          <p className="text-xs sm:text-sm text-gray-500">
+                            {activity.dateofactivity}
+                          </p>
                         </div>
                       </div>
 
                       {/* Description */}
-                      <div className="px-4 py-3 text-gray-700 text-sm whitespace-pre-line">
+                      <div className="px-3 sm:px-4 py-2 sm:py-3 text-gray-700 text-sm whitespace-pre-line">
                         {activity.description}
                       </div>
 
-                      {/* Photos with double-click like */}
-                      {activity.photos && activity.photos.length > 0 && (
-                        <div className="relative p-4 flex flex-wrap gap-2">
-                          {activity.photos.map((photo) => (
+                      {/* Photos */}
+                      {activity.photos?.length ? (
+                        <div className="px-3 sm:px-4 pb-3 sm:pb-4 pt-2 sm:pt-3 flex flex-wrap gap-2">
+                          {activity.photos?.map((photo) => (
                             <div
                               key={photo.id}
-                              className="relative w-full sm:w-1/2 md:w-1/3 lg:w-1/4 h-48 overflow-hidden rounded-lg"
+                              className="relative w-full xs:w-1/2 sm:w-1/2 md:w-1/3 lg:w-1/4 h-40 sm:h-48 overflow-hidden rounded-lg"
                             >
                               <img
                                 src={photo.url}
@@ -255,30 +376,20 @@ export default function ResidentHome({ activities = [] }: { activities?: Activit
                                 className="w-full h-full object-cover cursor-pointer"
                                 onDoubleClick={() => handleLike(activity.id)}
                               />
-
-                              {/* Heart animation */}
                               {showHeart && (
                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                  <HeartIcon className="w-16 h-16 text-white drop-shadow-lg animate-ping" />
+                                  <HeartIcon className="w-12 h-12 sm:w-16 sm:h-16 text-white drop-shadow-lg animate-ping" />
                                 </div>
                               )}
                             </div>
                           ))}
                         </div>
-                      )}
+                      ) : null}
 
-                      {/* Actions */}
-                      <div className="flex items-center justify-between px-4 py-2 border-t border-gray-100">
-                        <div className="flex items-center space-x-4 text-gray-500">
-                          {/* <button
-                            className="flex items-center gap-1 hover:text-blue-600 transition-colors"
-                            onClick={() => handleLike(activity.id)}
-                          >
-                            <HeartIcon className="w-5 h-5" />
-                            <span>{likeCount} Like{likeCount !== 1 ? "s" : ""}</span>
-                          </button> */}
-                        </div>
-                        <div className="text-gray-400 text-sm">Barangay Portal</div>
+                      {/* Footer */}
+                      <div className="flex items-center justify-between px-3 sm:px-4 py-2 border-t border-gray-100 text-xs sm:text-sm text-gray-500">
+                        <span />
+                        <span>Barangay Portal</span>
                       </div>
                     </div>
                   );

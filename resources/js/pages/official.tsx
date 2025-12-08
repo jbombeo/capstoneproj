@@ -131,7 +131,7 @@ export default function OfficialPage() {
       <Head title="Officials" />
 
       {/* HEADER */}
-      <div className="mb-10 bg-gradient-to-r from-green-700 to-green-500 text-white p-8 rounded-xl shadow-xl">
+      <div className="mb-10 bg-gradient-to-r from-blue-600 to-blue-300 text-white p-8  shadow-xl">
         <h1 className="text-4xl font-extrabold">Barangay Officials</h1>
         <p className="opacity-90 text-sm">
           Official Barangay Roster and Term Information

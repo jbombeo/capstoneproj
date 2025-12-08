@@ -180,7 +180,7 @@ export default function DocumentRequests() {
       <Head title="Document Requests" />
 
       {/* Header */}
-      <div className="flex justify-between items-center mb-8 bg-green-600 text-white shadow-lg p-6 rounded-xl">
+      <div className="flex justify-between items-center items-center mb-10 bg-gradient-to-r from-blue-600 to-blue-300 text-white p-8  shadow-xl">
         <h1 className="text-3xl font-bold">Document Requests</h1>
         <Button onClick={() => setShowModal(true)}>+ Request Document</Button>
       </div>

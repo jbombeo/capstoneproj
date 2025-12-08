@@ -345,7 +345,7 @@ export default function BlotterPage() {
       <Head title="Blotters" />
       <Toaster />
 
-      <div className="flex justify-between items-center mb-8 bg-green-600 text-white shadow-lg p-6">
+      <div className="mb-10 bg-gradient-to-r from-blue-600 to-blue-300 text-white p-8  shadow-xl">
         <h1 className="text-3xl font-bold">Blotters List</h1>
       </div>
 

@@ -1,6 +1,0 @@
-import{j as n}from"./app-_wj1wiEc.js";import"./app-DgE45SX0.js";function g({label:e,variant:r="primary",full:o,...t}){const a={primary:"bg-blue-600 text-white hover:bg-blue-700",secondary:"bg-gray-200 text-gray-800 hover:bg-gray-300",danger:"bg-red-600 text-white hover:bg-red-700"};return n.jsx("button",{...t,className:`
-        px-4 py-2 rounded-lg font-semibold transition
-        ${a[r]}
-        ${o?"w-full":""}
-        ${t.className}
-      `,children:e})}export{g as default};

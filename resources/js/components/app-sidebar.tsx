@@ -102,9 +102,9 @@ items: [{ title: "Dashboard", href: dashboard().url, icon: Home }],
 
 export function AppSidebar() {
   return (
-    <Sidebar collapsible="icon" variant="inset" className="bg-green-600 text-dark">
+    <Sidebar collapsible="icon" variant="inset" className="bg-blue-600 text-dark">
       {/* Logo Section */}
-      <SidebarHeader className="bg-green-600 flex flex-col items-center py-6">
+      <SidebarHeader className="bg-blue-600 flex flex-col items-center py-6">
         <Link href={String(dashboard())} prefetch>
           <AppLogo />
         </Link>
